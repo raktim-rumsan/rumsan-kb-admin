@@ -100,10 +100,6 @@ export const useUserStore = create<UserState>()(
         if (typeof window !== "undefined") {
           localStorage.removeItem("userProfile");
         }
-
-        // Also clear tenant data when user is cleared
-        const { useTenantStore } = await import("@/stores/tenantStore");
-        useTenantStore.getState().clearTenant();
       },
 
       updateUserProfile: (profile) => {
@@ -154,14 +150,7 @@ export const useUserStore = create<UserState>()(
               false,
               "initializeAuth:session"
             );
-
-            // Fetch tenant data now that user is authenticated
-            // Only if tenant store is not already initialized or loading
-            const { useTenantStore } = await import("@/stores/tenantStore");
-            const tenantState = useTenantStore.getState();
-            if (!tenantState.isInitialized && !tenantState.isLoading) {
-              useTenantStore.getState().fetchTenantData();
-            }
+           
           } else {
             set(
               {
@@ -191,13 +180,6 @@ export const useUserStore = create<UserState>()(
                 "authStateChange:signedIn"
               );
 
-              // Fetch tenant data now that user is authenticated
-              // Only if tenant store is not already initialized or loading
-              const { useTenantStore } = await import("@/stores/tenantStore");
-              const tenantState = useTenantStore.getState();
-              if (!tenantState.isInitialized && !tenantState.isLoading) {
-                useTenantStore.getState().fetchTenantData();
-              }
             } else if (event === "SIGNED_OUT") {
               await get().clearUser();
               // clearUser now handles tenant data clearing

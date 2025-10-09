@@ -1,17 +1,9 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, LogOut } from "lucide-react";
 import { createBrowserClient } from "@supabase/ssr";
 import { useRouter } from "next/navigation";
-import {
-  useTenantId,
-  useSetTenantId,
-  useClearTenant,
-} from "@/stores/tenantStore";
-import { useTenantQuery } from "@/queries/tenantQuery";
-
 interface HeaderProps {
   onMenuClick: () => void;
 }
@@ -23,36 +15,11 @@ export function Header({ onMenuClick }: HeaderProps) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
 
-  const tenantId = useTenantId();
-  const setTenantId = useSetTenantId();
-  const clearTenant = useClearTenant();
-  const { data, isLoading } = useTenantQuery();
-
-
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted && !isLoading && data?.data?.personal) {
-      const slug = data.data.personal.slug;
-      // Only set personal workspace as default if no tenantId is currently stored
-      // This prevents overriding user's team selection
-      if (slug && !tenantId && !localStorage.getItem("tenantId")) {
-        localStorage.setItem("tenantId", slug);
-        setTenantId(slug);
-      }
-    }
-  }, [isMounted, data, isLoading, tenantId, setTenantId]);
-
   const handleLogout = async () => {
-    clearTenant();
     await supabase.auth.signOut();
     router.push("/auth/login");
   };
 
-  if (!isMounted || isLoading) return null;
 
   return (
     <header className="bg-white border-b border-gray-200 px-4 py-3 lg:px-6">

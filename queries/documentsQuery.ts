@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/utils";
-import { useTenantId } from "@/stores/tenantStore";
 
 import API_BASE_URL from "@/constants";
 
@@ -11,13 +10,11 @@ export function useDocUploadMutation(onSuccess?: () => void) {
     mutationFn: async (file: File) => {
       const formData = new FormData();
       formData.append("file", file);
-      const tenantId = localStorage.getItem("tenantId");
       const access_token = getAuthToken();
       const res = await fetch(`${API_BASE_URL}/admin/docs/upload`, {
         method: "POST",
         body: formData,
         headers: {
-          "x-tenant-id": tenantId || "",
           access_token: access_token || "",
         },
       });
@@ -38,17 +35,14 @@ export function useDocUploadMutation(onSuccess?: () => void) {
 }
 
 export function useDocsQuery() {
-  const tenantId = useTenantId();
 
   return useQuery({
-    queryKey: ["documents", tenantId],
+    queryKey: ["documents"],
     queryFn: async () => {
-      const tenantId = localStorage.getItem("tenantId");
       const access_token = getAuthToken();
       const res = await fetch(`${API_BASE_URL}/admin/docs`, {
         method: "GET",
         headers: {
-          "x-tenant-id": tenantId || "",
           access_token: access_token || "",
           accept: "application/json",
         },
@@ -69,13 +63,11 @@ export function useDocDeleteMutation(onSuccess?: () => void) {
 
   return useMutation({
     mutationFn: async (documentId: string) => {
-      const tenantId = localStorage.getItem("tenantId");
       const access_token = getAuthToken();
       const res = await fetch(`${API_BASE_URL}/admin/docs/${documentId}`, {
         method: "DELETE",
         headers: {
           accept: "application/json",
-          "x-tenant-id": tenantId || "",
           access_token: access_token || "",
         },
       });
@@ -105,13 +97,11 @@ export function useEmbeddingMutation(onSuccess?: () => void) {
 
   return useMutation({
     mutationFn: async (documentId: string) => {
-      const tenantId = localStorage.getItem("tenantId");
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/embeddings`, {
+      const res = await fetch(`${API_BASE_URL}/embeddings/admin`, {
         method: "POST",
         headers: {
           accept: "application/json",
-          "x-tenant-id": tenantId || "",
           access_token: access_token || "",
           "Content-Type": "application/json",
         },
@@ -142,12 +132,10 @@ export function useEmbeddingMutation(onSuccess?: () => void) {
 export async function viewDocument(url: string, setPreviewUrl: (url: string | null) => void) {
   const serverUrl = process.env.NEXT_PUBLIC_SERVER_API!;
   const accessToken = getAuthToken();
-  const tenantId = localStorage.getItem("tenantId");
   const fileUrl = `${serverUrl}/${url.replace(/^\/+/, "")}`;
 
   const headers: Record<string, string> = { accept: "application/pdf" };
   if (accessToken) headers["access_token"] = accessToken;
-  if (tenantId) headers["x-tenant-id"] = tenantId;
 
   const response = await fetch(fileUrl, { headers });
   if (!response.ok) {

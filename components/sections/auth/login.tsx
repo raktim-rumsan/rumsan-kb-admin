@@ -3,7 +3,6 @@
 import type React from "react";
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import Link from "next/link";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,12 +89,7 @@ export default function AuthLogin() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-gray-600">
-              Don&apos;t have an account?{" "}
-              <Link href="/auth/sign-up" className="font-medium text-black hover:underline">
-                Sign up
-              </Link>
-            </div>
+            
           </CardContent>
         </Card>
       </div>

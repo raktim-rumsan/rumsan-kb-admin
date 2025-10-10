@@ -5,6 +5,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { toastUtils } from "@/lib/toast-utils";
@@ -16,7 +17,6 @@ interface SimpleFileUploadModalProps {
   onUploadSuccess: () => void;
   maxDocuments?: number;
   currentDocumentCount?: number;
-  isPersonalWorkspace?: boolean;
 }
 
 export function SimpleFileUploadModal({
@@ -25,9 +25,9 @@ export function SimpleFileUploadModal({
   onUploadSuccess,
   maxDocuments,
   currentDocumentCount = 0,
-  isPersonalWorkspace = false,
 }: SimpleFileUploadModalProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [industry, setIndustry] = useState<string>("");
   const [isUploading, setIsUploading] = useState(false);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -39,23 +39,16 @@ export function SimpleFileUploadModal({
   const uploadMutation = useDocUploadMutation(() => {
     toastUtils.fileUpload.success(selectedFile?.name || "File");
     setSelectedFile(null);
+    setIndustry("");
     onUploadSuccess();
     setIsUploading(false);
     onClose(); // Close the modal after successful upload
+    
   });
 
   const handleUpload = () => {
     if (!selectedFile) {
       toastUtils.generic.error("No file selected", "Please select a file to upload");
-      return;
-    }
-
-    // Check document limit for demo workspaces
-    if (isPersonalWorkspace && maxDocuments !== undefined && currentDocumentCount >= maxDocuments) {
-      toastUtils.generic.error(
-        "Document limit reached",
-        `Demo workspaces are limited to ${maxDocuments} documents. Please upgrade to upload more files.`
-      );
       return;
     }
 
@@ -70,7 +63,8 @@ export function SimpleFileUploadModal({
     // Show upload started toast
     toastUtils.fileUpload.started(selectedFile.name);
 
-    uploadMutation.mutate(selectedFile, {
+    // pass both file and industry to the mutation
+    uploadMutation.mutate({ file: selectedFile, industry }, {
       onError: (error: unknown) => {
         const errorMessage = error instanceof Error ? error.message : undefined;
         toastUtils.fileUpload.error(errorMessage);
@@ -91,6 +85,20 @@ export function SimpleFileUploadModal({
         <div className="space-y-6">
           <p className="text-gray-600">Select a file from your computer to upload.</p>
           <div className="space-y-2">
+            <Label htmlFor="industry-select">Industry</Label>
+            <Select value={industry} onValueChange={setIndustry}>
+              <SelectTrigger id="industry-select" className="w-full">
+                <SelectValue placeholder="Select an industry" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="banking">Banking</SelectItem>
+                <SelectItem value="dentistry">Dentistry</SelectItem>
+                <SelectItem value="law">Law</SelectItem>
+                <SelectItem value="healthcare">HealthCare</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
             <Label htmlFor="file-upload">File</Label>
             <Input id="file-upload" type="file" onChange={handleFileChange} />
           </div>
@@ -100,26 +108,11 @@ export function SimpleFileUploadModal({
               File size shouldn&apos;t exceed 10 MB.
             </AlertDescription>
           </Alert>
-          {isPersonalWorkspace && maxDocuments !== undefined && (
-            <Alert className="border-blue-200 bg-blue-50">
-              <AlertTriangle className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-800">
-                Demo workspace: {currentDocumentCount}/{maxDocuments} documents used.
-                {currentDocumentCount >= maxDocuments
-                  ? " Upgrade to upload more files."
-                  : " Upgrade for unlimited documents."}
-              </AlertDescription>
-            </Alert>
-          )}
           <Button
             onClick={handleUpload}
             disabled={
               isUploading ||
-              !selectedFile ||
-              (isPersonalWorkspace &&
-                maxDocuments !== undefined &&
-                currentDocumentCount >= maxDocuments)
-            }
+              !selectedFile             }
             className="w-full bg-gray-600 hover:bg-gray-700"
           >
             {isUploading ? "Uploading..." : "Upload"}

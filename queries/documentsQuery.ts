@@ -3,32 +3,56 @@ import { getAuthToken } from "@/lib/utils";
 
 import API_BASE_URL from "@/constants";
 
+
 export function useDocUploadMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("file", file);
+    mutationFn: async (
+      payload: File | FormData | { file: File; industry?: string },
+    ) => {
       const access_token = getAuthToken();
+
+      // Build FormData
+      let formData: FormData;
+      let industry: string | undefined;
+
+      if (payload instanceof FormData) {
+        formData = payload;
+        // Try to read industry from FormData if present
+        const industryValue = formData.get('industry');
+        if (typeof industryValue === 'string') industry = industryValue;
+      } else if (payload instanceof File) {
+        formData = new FormData();
+        formData.append('file', payload);
+      } else {
+        formData = new FormData();
+        formData.append('file', payload.file);
+        if (payload.industry) {
+          formData.append('industry', payload.industry);
+          industry = payload.industry;
+        }
+      }
+
+      // Build headers, only add x-industry if defined
+      const headers: Record<string, string> = {};
+      if (access_token) headers['access_token'] = access_token;
+      if (industry) headers['x-industry'] = industry;
+
       const res = await fetch(`${API_BASE_URL}/admin/docs/upload`, {
-        method: "POST",
+        method: 'POST',
         body: formData,
-        headers: {
-          access_token: access_token || "",
-        },
+        headers,
       });
-      const data = await res.json();
+      const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-        // Handle API error responses properly
-        const errorMessage = data.message || data.error || `HTTP ${res.status}: ${res.statusText}`;
+       const errorMessage = data?.message || data?.error || `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
       return data;
     },
     onSuccess: () => {
-      // Invalidate documents query to refetch the list
-      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      queryClient.invalidateQueries({ queryKey: ['documents'] });
       onSuccess?.();
     },
   });

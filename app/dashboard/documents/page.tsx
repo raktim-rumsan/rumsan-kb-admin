@@ -14,7 +14,12 @@ import {
 import { Upload, Trash2 } from "lucide-react";
 import { toastUtils, dismissToast } from "@/lib/toast-utils";
 import { SimpleFileUploadModal } from "@/components/documents/fileUploadModal";
-import { useDocsQuery, useDocDeleteMutation, useEmbeddingMutation, useUnembeddingMutation } from "@/queries/documentsQuery";
+import {
+  useDocsQuery,
+  useDocDeleteMutation,
+  useEmbeddingMutation,
+  useUnembeddingMutation,
+} from "@/queries/documentsQuery";
 import { useDocuments, useSetDocuments } from "@/stores/documentsStore";
 import { DocumentsResponseSchema } from "@/lib/schemas";
 import { Switch } from "@/components/ui/switch";
@@ -35,7 +40,7 @@ export default function DocumentsPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Use both TanStack Query and Zustand store
-  const { data, isLoading, error,refetch } = useDocsQuery();
+  const { data, isLoading, error, refetch } = useDocsQuery();
   const documentsFromStore = useDocuments();
   const setDocuments = useSetDocuments();
 
@@ -98,7 +103,8 @@ export default function DocumentsPage() {
 
           const backendMessage = error instanceof Error ? error.message : undefined;
           const errorTitle = "Unembed failed";
-          const errorMessage = backendMessage ?? `Failed to remove embeddings for "${fileName || id}."`;
+          const errorMessage =
+            backendMessage ?? `Failed to remove embeddings for "${fileName || id}."`;
           toastUtils.generic.error(errorTitle, errorMessage);
         },
         onSuccess: () => {
@@ -147,10 +153,7 @@ export default function DocumentsPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold">My Resources</h1>
         </div>
-        <Button
-          className="bg-black hover:bg-gray-800"
-          onClick={() => setIsUploadModalOpen(true)}
-        >
+        <Button className="bg-black hover:bg-gray-800" onClick={() => setIsUploadModalOpen(true)}>
           <Upload className="w-4 h-4 mr-2" />
           Upload File
         </Button>
@@ -168,7 +171,7 @@ export default function DocumentsPage() {
                     <TableRow>
                       <TableHead>DATE</TableHead>
                       <TableHead>FILE NAME</TableHead>
-                       <TableHead>INDUSTRY</TableHead>
+                      <TableHead>INDUSTRY</TableHead>
                       <TableHead>ACTIONS</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -181,9 +184,9 @@ export default function DocumentsPage() {
                             {doc.fileName.replaceAll("_", " ")}
                           </div>
                         </TableCell>
-                        <TableCell>{(doc.industry).toLocaleUpperCase()}</TableCell>
+                        <TableCell>{doc?.industry?.toLocaleUpperCase()}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">                      
+                          <div className="flex items-center gap-2">
                             <Button
                               variant="outline"
                               size="sm"
@@ -194,8 +197,10 @@ export default function DocumentsPage() {
                               <Trash2 className="w-4 h-4" />
                             </Button>
                             <Switch
-                              checked={doc.status !== 'PENDING'}
-                              onCheckedChange={(checked) => handleToggle(doc.id, Boolean(checked), doc.fileName)}
+                              checked={doc.status !== "PENDING"}
+                              onCheckedChange={(checked) =>
+                                handleToggle(doc.id, Boolean(checked), doc.fileName)
+                              }
                               disabled={trainingDocumentId === doc.id}
                               aria-label={`Toggle document ${doc.fileName}`}
                             />
@@ -211,9 +216,7 @@ export default function DocumentsPage() {
                     Failed to load documents: {error.message}
                   </div>
                 ) : documents.length === 0 && !isLoading ? (
-                  <div className="text-center py-8 text-gray-500">
-                    No documents uploaded yet
-                  </div>
+                  <div className="text-center py-8 text-gray-500">No documents uploaded yet</div>
                 ) : null}
               </>
             )}

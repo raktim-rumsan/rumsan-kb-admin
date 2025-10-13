@@ -93,8 +93,7 @@ export function SimpleFileUploadModal({
               <SelectContent>
                 <SelectItem value="banking">Banking</SelectItem>
                 <SelectItem value="dentistry">Dentistry</SelectItem>
-                <SelectItem value="law">Law</SelectItem>
-                <SelectItem value="healthcare">HealthCare</SelectItem>
+                <SelectItem value="vet">Vet</SelectItem>
               </SelectContent>
             </Select>
           </div>

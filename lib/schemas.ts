@@ -24,6 +24,7 @@ export const UserSchema = z.object({
 export const DocumentSchema = z.object({
   id: z.string(),
   orgId: z.string().nullable(),
+  industry: z.string(),
   fileName: z.string(),
   url: z.string(),
   status: z.string(),

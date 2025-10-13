@@ -23,6 +23,7 @@ interface Document {
   id: string;
   orgId: string;
   fileName: string;
+  industry: string;
   url: string;
   status: string;
   createdAt: string;
@@ -167,6 +168,7 @@ export default function DocumentsPage() {
                     <TableRow>
                       <TableHead>DATE</TableHead>
                       <TableHead>FILE NAME</TableHead>
+                       <TableHead>INDUSTRY</TableHead>
                       <TableHead>ACTIONS</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -179,6 +181,7 @@ export default function DocumentsPage() {
                             {doc.fileName.replaceAll("_", " ")}
                           </div>
                         </TableCell>
+                        <TableCell>{(doc.industry).toLocaleUpperCase()}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">                      
                             <Button

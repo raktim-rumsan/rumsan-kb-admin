@@ -122,7 +122,44 @@ export function useEmbeddingMutation(onSuccess?: () => void) {
   return useMutation({
     mutationFn: async (documentId: string) => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/embeddings/admin`, {
+      const res = await fetch(`${API_BASE_URL}/admin/embeddings`, {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          access_token: access_token || "",
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          documentId: documentId,
+        }),
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        // API returns error message in 'message' field
+        const errorMessage =
+          errorData.message || errorData.error || `Failed to train document (${res.status})`;
+        throw new Error(errorMessage);
+      }
+
+      const data = await res.json();
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate documents query to refetch the list and update status
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
+      onSuccess?.();
+    },
+  });
+}
+
+export function useUnembeddingMutation(onSuccess?: () => void) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (documentId: string) => {
+      const access_token = getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/admin/embeddings/unembed`, {
         method: "POST",
         headers: {
           accept: "application/json",

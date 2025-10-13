@@ -11,12 +11,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Upload, RotateCcw, Trash2 } from "lucide-react";
+import { Upload, Trash2 } from "lucide-react";
 import { toastUtils, dismissToast } from "@/lib/toast-utils";
 import { SimpleFileUploadModal } from "@/components/documents/fileUploadModal";
-import { useDocsQuery, useDocDeleteMutation, useEmbeddingMutation } from "@/queries/documentsQuery";
+import { useDocsQuery, useDocDeleteMutation, useEmbeddingMutation, useUnembeddingMutation } from "@/queries/documentsQuery";
 import { useDocuments, useSetDocuments } from "@/stores/documentsStore";
 import { DocumentsResponseSchema } from "@/lib/schemas";
+import { Switch } from "@/components/ui/switch";
 
 interface Document {
   id: string;
@@ -33,7 +34,7 @@ export default function DocumentsPage() {
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
 
   // Use both TanStack Query and Zustand store
-  const { data, isLoading, refetch } = useDocsQuery();
+  const { data, isLoading, error,refetch } = useDocsQuery();
   const documentsFromStore = useDocuments();
   const setDocuments = useSetDocuments();
 
@@ -55,54 +56,62 @@ export default function DocumentsPage() {
     }
   }, [data, setDocuments]);
 
-  const deleteMutation = useDocDeleteMutation(() => {
-    toastUtils.data.deleteSuccess("Document");
-    // Note: The store will be updated when the query refetches
-  });
-
   const embeddingMutation = useEmbeddingMutation(() => {
     toastUtils.generic.success("Training completed", "Document has been successfully trained.");
     // Note: The store will be updated when the query refetches
   });
 
-  const handleTrain = async (documentId: string, fileName: string, isRetrain: boolean) => {
-    const action = isRetrain ? "Retraining" : "Training";
-    const loadingToastId = toastUtils.generic.loading(`${action} document...`);
+  const unembeddingMutation = useUnembeddingMutation(() => {
+    toastUtils.generic.success("Unembed completed", "Document embeddings removed.");
+  });
 
-    // Set the training document ID to show loading state for this specific document
-    setTrainingDocumentId(documentId);
+  // Toggle handler: when switched ON call embeddings API; when OFF call unembedding API
+  const handleToggle = (id: string, checked: boolean, fileName?: string) => {
+    if (checked) {
+      const loadingToastId = toastUtils.generic.loading(`Training document...`);
+      setTrainingDocumentId(id);
 
-    embeddingMutation.mutate(documentId, {
-      onError: (error: unknown) => {
-        dismissToast(loadingToastId);
-        setTrainingDocumentId(null); // Clear training state
+      embeddingMutation.mutate(id, {
+        onError: (error: unknown) => {
+          dismissToast(loadingToastId);
+          setTrainingDocumentId(null);
 
-        let errorMessage = `Failed to ${action.toLowerCase()} "${fileName}".`;
-        let errorTitle = `${action} failed`;
+          const backendMessage = error instanceof Error ? error.message : undefined;
+          const errorTitle = "Training failed";
+          const errorMessage = backendMessage ?? `Failed to train "${fileName || id}."`;
+          toastUtils.generic.error(errorTitle, errorMessage);
+        },
+        onSuccess: () => {
+          dismissToast(loadingToastId);
+          setTrainingDocumentId(null);
+        },
+      });
+    } else {
+      const loadingToastId = toastUtils.generic.loading(`Removing document from knowledge base...`);
+      setTrainingDocumentId(id);
 
-        if (error instanceof Error) {
-          errorMessage = error.message;
+      unembeddingMutation.mutate(id, {
+        onError: (error: unknown) => {
+          dismissToast(loadingToastId);
+          setTrainingDocumentId(null);
 
-          // Check for specific error types to provide better user guidance
-          if (error.message.includes("Failed to parse PDF")) {
-            errorTitle = "Document Processing Error";
-            errorMessage =
-              "The PDF file appears to be corrupted or invalid. Please try uploading a different file.";
-          } else if (error.message.includes("invalid top-level pages dictionary")) {
-            errorTitle = "PDF Format Error";
-            errorMessage =
-              "This PDF file has an invalid format and cannot be processed. Please try a different PDF file.";
-          }
-        }
-
-        toastUtils.generic.error(errorTitle, errorMessage);
-      },
-      onSuccess: () => {
-        dismissToast(loadingToastId);
-        setTrainingDocumentId(null); // Clear training state
-      },
-    });
+          const backendMessage = error instanceof Error ? error.message : undefined;
+          const errorTitle = "Unembed failed";
+          const errorMessage = backendMessage ?? `Failed to remove embeddings for "${fileName || id}."`;
+          toastUtils.generic.error(errorTitle, errorMessage);
+        },
+        onSuccess: () => {
+          dismissToast(loadingToastId);
+          setTrainingDocumentId(null);
+        },
+      });
+    }
   };
+
+  const deleteMutation = useDocDeleteMutation(() => {
+    toastUtils.data.deleteSuccess("Document");
+    // Note: The store will be updated when the query refetches
+  });
 
   const handleDelete = async (id: string, fileName: string) => {
     if (
@@ -158,7 +167,6 @@ export default function DocumentsPage() {
                     <TableRow>
                       <TableHead>DATE</TableHead>
                       <TableHead>FILE NAME</TableHead>
-                      <TableHead>STATUS</TableHead>
                       <TableHead>ACTIONS</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -171,28 +179,8 @@ export default function DocumentsPage() {
                             {doc.fileName.replaceAll("_", " ")}
                           </div>
                         </TableCell>
-                        <TableCell>{doc.status}</TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleTrain(doc.id, doc.fileName, doc.status !== "PENDING")
-                              }
-                              disabled={trainingDocumentId === doc.id}
-                            >
-                              <RotateCcw
-                                className={`w-4 h-4 ${
-                                  trainingDocumentId === doc.id ? "animate-spin" : ""
-                                }`}
-                              />
-                              {trainingDocumentId === doc.id
-                                ? "Training..."
-                                : doc.status === "PENDING"
-                                ? "Train"
-                                : "Retrain"}
-                            </Button>
+                          <div className="flex items-center gap-2">                      
                             <Button
                               variant="outline"
                               size="sm"
@@ -202,6 +190,12 @@ export default function DocumentsPage() {
                             >
                               <Trash2 className="w-4 h-4" />
                             </Button>
+                            <Switch
+                              checked={doc.status !== 'PENDING'}
+                              onCheckedChange={(checked) => handleToggle(doc.id, Boolean(checked), doc.fileName)}
+                              disabled={trainingDocumentId === doc.id}
+                              aria-label={`Toggle document ${doc.fileName}`}
+                            />
                           </div>
                         </TableCell>
                       </TableRow>
@@ -209,9 +203,15 @@ export default function DocumentsPage() {
                   </TableBody>
                 </Table>
 
-                {documents.length === 0 && !isLoading && (
-                  <div className="text-center py-8 text-gray-500">No documents uploaded yet</div>
-                )}
+                {error ? (
+                  <div className="text-center py-8 text-red-500">
+                    Failed to load documents: {error.message}
+                  </div>
+                ) : documents.length === 0 && !isLoading ? (
+                  <div className="text-center py-8 text-gray-500">
+                    No documents uploaded yet
+                  </div>
+                ) : null}
               </>
             )}
           </div>

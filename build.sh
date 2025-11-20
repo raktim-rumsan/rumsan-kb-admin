@@ -22,10 +22,12 @@ fi
 # Load environment variables
 if [ -f .env.prod ]; then
     export $(cat .env.prod | grep -v '^#' | xargs)
+    echo "📋 Loaded environment variables:"
+    echo "  NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL"
 fi
 
 # Check required environment variables
-required_vars=("NEXT_PUBLIC_SUPABASE_URL" "NEXT_PUBLIC_SUPABASE_ANON_KEY")
+required_vars=("NEXT_PUBLIC_SUPABASE_URL" "NEXT_PUBLIC_SUPABASE_ANON_KEY" "NEXT_PUBLIC_SERVER_API")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do
@@ -47,6 +49,8 @@ docker build \
     --platform linux/amd64 \
     --build-arg NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
     --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
+    --build-arg NEXT_PUBLIC_SERVER_API="$NEXT_PUBLIC_SERVER_API" \
+
     -t rumsan/ai-admin-kb:latest \
     .
 

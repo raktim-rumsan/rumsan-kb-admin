@@ -1,7 +1,7 @@
 services:
   nextjs-app:
     image: rumsan/ai-admin-kb:latest
-    container_name: nextjs-app
+    container_name: rumsan-ai-kb
     restart: unless-stopped
     ports:
       - "3001:3000"
@@ -11,9 +11,6 @@ services:
       - HOSTNAME=0.0.0.0
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
       - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-      - NEXT_PUBLIC_URL=${NEXT_PUBLIC_URL}
-      - NEXT_PUBLIC_SERVER_API=${NEXT_PUBLIC_SERVER_API}
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
     env_file:
       - .env
     extra_hosts:

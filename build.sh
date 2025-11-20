@@ -39,7 +39,7 @@ done
 if [ ${#missing_vars[@]} -ne 0 ]; then
     echo "❌ Missing required environment variables:"
     printf '%s\n' "${missing_vars[@]}"
-    echo "Please set these variables in your .env file"
+    echo "Please set these variables in your .env.prod file"
     exit 1
 fi
 
@@ -50,7 +50,6 @@ docker build \
     --build-arg NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
     --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
     --build-arg NEXT_PUBLIC_SERVER_API="$NEXT_PUBLIC_SERVER_API" \
-
     -t rumsan/ai-admin-kb:latest \
     .
 

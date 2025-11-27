@@ -16,6 +16,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { toastUtils } from "@/lib/toast-utils";
 import { useDocUploadMutation } from "@/queries/documentsQuery";
+import { SECTORS } from "@/constants/sector";
 
 interface SimpleFileUploadModalProps {
   isOpen: boolean;
@@ -99,9 +100,11 @@ export function SimpleFileUploadModal({
                 <SelectValue placeholder="Select an industry" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="banking">Banking</SelectItem>
-                <SelectItem value="dentistry">Dentistry</SelectItem>
-                <SelectItem value="veterinary">Veterinary</SelectItem>
+                {SECTORS.map((sector) => (
+                  <SelectItem key={sector.value} value={sector.value}>
+                    {sector.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>

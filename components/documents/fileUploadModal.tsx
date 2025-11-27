@@ -5,7 +5,13 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { AlertTriangle } from "lucide-react";
 import { toastUtils } from "@/lib/toast-utils";
@@ -43,7 +49,6 @@ export function SimpleFileUploadModal({
     onUploadSuccess();
     setIsUploading(false);
     onClose(); // Close the modal after successful upload
-    
   });
 
   const handleUpload = () => {
@@ -64,16 +69,19 @@ export function SimpleFileUploadModal({
     toastUtils.fileUpload.started(selectedFile.name);
 
     // pass both file and industry to the mutation
-    uploadMutation.mutate({ file: selectedFile, industry }, {
-      onError: (error: unknown) => {
-        const errorMessage = error instanceof Error ? error.message : undefined;
-        toastUtils.fileUpload.error(errorMessage);
-        setIsUploading(false);
-      },
-      onSuccess: () => {
-        // Success is handled in the mutation callback above
-      },
-    });
+    uploadMutation.mutate(
+      { file: selectedFile, industry },
+      {
+        onError: (error: unknown) => {
+          const errorMessage = error instanceof Error ? error.message : undefined;
+          toastUtils.fileUpload.error(errorMessage);
+          setIsUploading(false);
+        },
+        onSuccess: () => {
+          // Success is handled in the mutation callback above
+        },
+      }
+    );
   };
 
   return (
@@ -93,7 +101,7 @@ export function SimpleFileUploadModal({
               <SelectContent>
                 <SelectItem value="banking">Banking</SelectItem>
                 <SelectItem value="dentistry">Dentistry</SelectItem>
-                <SelectItem value="vet">Vet</SelectItem>
+                <SelectItem value="veterinary">Veterinary</SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -109,9 +117,7 @@ export function SimpleFileUploadModal({
           </Alert>
           <Button
             onClick={handleUpload}
-            disabled={
-              isUploading ||
-              !selectedFile             }
+            disabled={isUploading || !selectedFile}
             className="w-full bg-gray-600 hover:bg-gray-700"
           >
             {isUploading ? "Uploading..." : "Upload"}

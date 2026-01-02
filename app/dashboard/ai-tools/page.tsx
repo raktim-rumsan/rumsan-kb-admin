@@ -134,7 +134,6 @@ export default function AiToolsManagementTab() {
                   onCheckedChange={() => handleToggle(server.id)}
                 />
 
-                {/* Delete Button */}
                 <Button
                   variant="ghost"
                   size="sm"
@@ -163,11 +162,16 @@ export default function AiToolsManagementTab() {
 
       {/* Create/Edit MCP Server Modal */}
       <CreateMcpServerModal
+        key={editingServerData?.id ?? "create"}
         isOpen={isCreateModalOpen}
         initialData={editingServerData} // prefill data fetched by sector
+        sectorName={editingServerData?.sectorName}
         disableSector={Boolean(editingServerData)} // disable dropdown when editing
         loading={isEditingLoading}
-        onClose={() => setEditingSector(null)}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingSector(null);
+        }}
         onSaveSuccess={() => {
           setIsCreateModalOpen(false);
           setEditingSector(null);

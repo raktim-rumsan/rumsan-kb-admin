@@ -8,6 +8,13 @@ export interface CreateMcpServerPayload {
   sectorName: string;
   authentication: Record<string, string>;
 }
+export interface UpdateMcpServerPayload  {
+  id: string;
+  name?: string;
+  url?: string;
+  sectorName?: string;
+  authentication?: Record<string, string>;
+};
 
 // Add MCP server types and queries/mutations
 export interface McpServer {
@@ -41,8 +48,6 @@ export function useMcpServersQuery() {
 }
 
 export function useMcpServerBySectorQuery(sectorName?: string) {
-  console.log(`${API_BASE_URL}/mcp-servers/sector/${sectorName}`,"----------------------------")
-  console.log("Using MCP Server Query for sector:", sectorName);
   return useQuery({
     queryKey: ["mcpServer", sectorName],
     queryFn: async () => {
@@ -60,7 +65,7 @@ export function useMcpServerBySectorQuery(sectorName?: string) {
       }
       return data?.data ?? null;
     },
-    // enabled: !!sectorName, // only run if sectorName exists
+    enabled: !!sectorName,
     staleTime: 1000 * 60 * 2,
   });
 }
@@ -127,11 +132,12 @@ export function useUpdateMcpServerMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: CreateMcpServerPayload) => {
+    mutationFn: async (payload: UpdateMcpServerPayload) => {
       const access_token = getAuthToken();
+      const {id} = payload;
 
-      const res = await fetch(`${API_BASE_URL}/mcp-servers`, {
-        method: 'POST',
+      const res = await fetch(`${API_BASE_URL}/mcp-servers/${id}`, {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json', 
           access_token: access_token || "",

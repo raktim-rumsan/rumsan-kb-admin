@@ -1,20 +1,10 @@
-
-
-
-
-
-
-
-
-
-
 "use client";
 
 import { useState } from "react";
 import { Eye, EyeOff, Plus, Trash } from "lucide-react";
 import {
   Dialog,
-  DialogContent,
+  DialogContent, 
   DialogHeader,
   DialogTitle,
   DialogDescription,
@@ -29,7 +19,6 @@ import { useCreateMcpServerMutation, useUpdateMcpServerMutation } from "@/querie
 import { toastUtils } from "@/lib/toast-utils";
 
 import { useForm, useFieldArray, Controller } from "react-hook-form";
-import { useMcpServerBySectorQuery } from "@/queries/aiToolQuery";
 
 type AuthEntry = { key: string; value: string; show?: boolean };
 
@@ -53,23 +42,21 @@ type CreateMcpServerModalProps = {
 export function CreateMcpServerModal({
   isOpen,
   sectorName,
+  initialData,
   onClose,
   onSaveSuccess,
   disableSector = false,
 }: CreateMcpServerModalProps) {
   const [isSaving, setIsSaving] = useState(false);
 
-  // 1️⃣ Fetch MCP server by sector using your existing query
-  const { data: serverData } = useMcpServerBySectorQuery(sectorName);
-
-  // 2️⃣ React Hook Form
+  // 2️⃣ React Hook Form — use `initialData` passed from parent (no internal query/reset)
   const { register, control, handleSubmit, reset, setValue, watch } = useForm<FormValues>({
     defaultValues: {
-      name: serverData?.name ?? "",
-      url: serverData?.url ?? "",
-      sectorName: serverData?.sectorName ?? "",
-      authentication: serverData
-        ? Object.entries(serverData.authentication || {}).map(([key, value]) => ({
+      name: initialData?.name ?? "",
+      url: initialData?.url ?? "",
+      sectorName: initialData?.sectorName ?? "",
+      authentication: initialData
+        ? Object.entries(initialData.authentication || {}).map(([key, value]) => ({
             key,
             value: String(value),
             show: false,
@@ -77,21 +64,6 @@ export function CreateMcpServerModal({
         : [{ key: "", value: "", show: false }],
     },
   });
-
-  // 3️⃣ Reset form immediately if serverData changes (no useEffect)
-  if (serverData) {
-    reset({
-      name: serverData.name,
-      url: serverData.url,
-      sectorName: serverData.sectorName,
-      authentication:
-        Object.entries(serverData.authentication || {}).map(([key, value]) => ({
-          key,
-          value: String(value),
-          show: false,
-        })) || [{ key: "", value: "", show: false }],
-    });
-  }
 
   // 4️⃣ Dynamic auth entries
   const { fields, append, remove } = useFieldArray({ control, name: "authentication" });
@@ -114,11 +86,13 @@ export function CreateMcpServerModal({
     }, {});
 
     const payload = {
+      id: initialData?.id,
       name: data.name.trim(),
       url: data.url.trim(),
-      sectorName: data.sectorName,
+      sectorName: data?.sectorName,
       authentication,
     };
+    console.log("Payload before sector check:", payload);
 
     try {
       if (sectorName) {
@@ -140,7 +114,15 @@ export function CreateMcpServerModal({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={() => { reset(); onClose(); }}>
+    <Dialog
+      open={isOpen}
+      onOpenChange={(open) => {
+        if (!open) {
+          reset();
+          onClose();
+        }
+      }}
+    >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle>{sectorName ? "Edit" : "Add New"} Server</DialogTitle>
@@ -171,7 +153,11 @@ export function CreateMcpServerModal({
               control={control}
               name="sectorName"
               render={({ field }) => (
-                <Select {...field} disabled={disableSector || Boolean(sectorName)}>
+                <Select
+                  value={field.value}
+                  onValueChange={(val) => field.onChange(val)}
+                  disabled={disableSector || Boolean(sectorName)}
+                >
                   <SelectTrigger id="sector" className="h-12 w-full">
                     <SelectValue placeholder="Select Sector" />
                   </SelectTrigger>
@@ -260,9 +246,6 @@ export function CreateMcpServerModal({
     </Dialog>
   );
 }
-
-
-
 
 
 

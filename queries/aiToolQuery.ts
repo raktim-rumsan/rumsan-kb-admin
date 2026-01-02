@@ -1,48 +1,34 @@
-import API_BASE_URL from "@/constants";
+import { ROUTES } from "@/constants";
 import { getAuthToken } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toastUtils } from "@/lib/toast-utils";
-
-export interface CreateMcpServerPayload {
-  name: string;
-  url: string;
-  sectorName: string;
-  authentication: Record<string, string>;
-}
-export interface UpdateMcpServerPayload  {
-  id: string;
-  name?: string;
-  url?: string;
-  sectorName?: string;
-  authentication?: Record<string, string>;
-};
-
-// Add MCP server types and queries/mutations
-export interface McpServer {
-  id: string;
-  name: string;
-  url: string;
-  sectorName?: string;
-  createdAt?: string;
-  updatedAt?: string;
-}
+import type {
+  McpServer,
+  CreateMcpServerPayload,
+  UpdateMcpServerPayload,
+  ApiResponse,
+} from "@/types/ai";
 
 export function useMcpServersQuery() {
   return useQuery({
     queryKey: ["mcpServers"],
     queryFn: async (): Promise<McpServer[]> => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/mcp-servers`, {
+      const res = await fetch(`${ROUTES.MCP_SERVERS}`, {
         headers: {
           accept: "application/json",
           access_token: access_token || "",
         },
       });
-      const data = await res.json().catch(() => ({}));
+      const parsed = (await res
+        .json()
+        .catch(() => ({} as ApiResponse<McpServer[]>))) as ApiResponse<
+        McpServer[]
+      >;
       if (!res.ok) {
-        throw new Error(data?.message || `HTTP ${res.status}`);
+        throw new Error(parsed?.message || `HTTP ${res.status}`);
       }
-      return data?.data ?? [];
+      return (parsed.data ?? []) as McpServer[];
     },
     staleTime: 1000 * 60 * 2,
   });
@@ -51,20 +37,22 @@ export function useMcpServersQuery() {
 export function useMcpServerBySectorQuery(sectorName?: string) {
   return useQuery({
     queryKey: ["mcpServer", sectorName],
-    queryFn: async () => {
+    queryFn: async (): Promise<McpServer | null> => {
       if (!sectorName) return null;
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/mcp-servers/sector/${sectorName}`, {
+      const res = await fetch(`${ROUTES.MCP_SERVER_BY_SECTOR(sectorName)}`, {
         headers: {
           accept: "application/json",
           access_token: access_token || "",
         },
       });
-      const data = await res.json().catch(() => ({}));
+      const parsed = (await res
+        .json()
+        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
       if (!res.ok) {
-        throw new Error(data?.message || `HTTP ${res.status}`);
+        throw new Error(parsed?.message || `HTTP ${res.status}`);
       }
-      return data?.data ?? null;
+      return (parsed.data ?? null) as McpServer | null;
     },
     enabled: !!sectorName,
     staleTime: 1000 * 60 * 2,
@@ -74,27 +62,30 @@ export function useMcpServerBySectorQuery(sectorName?: string) {
 export function useToggleMcpServerMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (serverId: string) => {
+    mutationFn: async (serverId: string): Promise<McpServer | null> => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/mcp-servers/${serverId}`, {
+      const res = await fetch(`${ROUTES.MCP_TOOGGLE_SERVER(serverId)}`, {
         method: "PATCH",
         headers: {
           accept: "application/json",
           access_token: access_token || "",
         },
       });
-      const data = await res.json().catch(() => ({}));
+      const parsed = (await res
+        .json()
+        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
       if (!res.ok) {
-        throw new Error(data?.message || `HTTP ${res.status}`);
+        throw new Error(parsed?.message || `HTTP ${res.status}`);
       }
-      return data;
+      return (parsed.data ?? null) as McpServer | null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
-      toastUtils.generic.success('MCP server status changed');
+      toastUtils.generic.success("MCP server status changed");
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Failed to toggle MCP server';
+      const message =
+        err instanceof Error ? err.message : "Failed to toggle MCP server";
       toastUtils.generic.error(message);
     },
   });
@@ -104,38 +95,44 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: CreateMcpServerPayload) => {
+    mutationFn: async (
+      payload: CreateMcpServerPayload
+    ): Promise<McpServer | null> => {
       const access_token = getAuthToken();
 
-      const res = await fetch(`${API_BASE_URL}/mcp-servers`, {
-        method: 'POST',
+      const res = await fetch(`${ROUTES.MCP_CREATE_SERVER}`, {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json', 
+          "Content-Type": "application/json",
           access_token: access_token || "",
           accept: "application/json",
         },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const parsed = (await res
+        .json()
+        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
 
       if (!res.ok) {
         const errorMessage =
-          data?.message || data?.error || `HTTP ${res.status}: ${res.statusText}`;
+          parsed?.message ||
+          parsed?.error ||
+          `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
 
-      return data; // The created MCP server
+      return (parsed.data ?? null) as McpServer | null;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['mcpServers'] });
-      // Also invalidate sector-specific cache so next edit fetches fresh data
-      queryClient.invalidateQueries({ queryKey: ['mcpServer'] });
-      toastUtils.generic.success('MCP server created');
+      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+      queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
+      toastUtils.generic.success("MCP server created");
       onSuccess?.();
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Failed to create MCP server';
+      const message =
+        err instanceof Error ? err.message : "Failed to create MCP server";
       toastUtils.generic.error(message);
     },
   });
@@ -145,40 +142,45 @@ export function useUpdateMcpServerMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (payload: UpdateMcpServerPayload) => {
+    mutationFn: async (
+      payload: UpdateMcpServerPayload
+    ): Promise<McpServer | null> => {
       const access_token = getAuthToken();
-      const {id} = payload;
+      const { id: serverId } = payload;
 
-      const res = await fetch(`${API_BASE_URL}/mcp-servers/${id}`, {
-        method: 'PUT',
+      const res = await fetch(`${ROUTES.MCP_UPDATE_SERVER(serverId)}`, {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json', 
+          "Content-Type": "application/json",
           access_token: access_token || "",
           accept: "application/json",
         },
         body: JSON.stringify(payload),
       });
 
-      const data = await res.json().catch(() => ({}));
+      const parsed = (await res
+        .json()
+        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
 
       if (!res.ok) {
         const errorMessage =
-          data?.message || data?.error || `HTTP ${res.status}: ${res.statusText}`;
+          parsed?.message ||
+          parsed?.error ||
+          `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
 
-      return data; // The created MCP server
+      return (parsed.data ?? null) as McpServer | null;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['mcpServers'] });
-      // Ensure any cached sector-specific entries are invalidated so
-      // useMcpServerBySectorQuery will refetch next time it's used.
-      queryClient.invalidateQueries({ queryKey: ['mcpServer'] });
-      toastUtils.generic.success('MCP server updated');
+      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+      queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
+      toastUtils.generic.success("MCP server updated");
       onSuccess?.();
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Failed to update MCP server';
+      const message =
+        err instanceof Error ? err.message : "Failed to update MCP server";
       toastUtils.generic.error(message);
     },
   });
@@ -188,9 +190,11 @@ export function useMCPDeleteMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (serverId: string) => {
+    mutationFn: async (
+      serverId: string
+    ): Promise<{ success?: boolean } | null> => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/mcp-servers/${serverId}`, {
+      const res = await fetch(`${ROUTES.MCP_DELETE_SERVER(serverId)}`, {
         method: "DELETE",
         headers: {
           accept: "application/json",
@@ -199,27 +203,32 @@ export function useMCPDeleteMutation(onSuccess?: () => void) {
       });
 
       if (!res.ok) {
-        const errorData = await res.json().catch(() => ({}));
-        // Handle API error responses properly
+        const errorData = await res
+          .json()
+          .catch(() => ({} as ApiResponse<null>));
         const errorMessage =
-          errorData.message || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+          errorData.message ||
+          errorData.error ||
+          `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
 
       // Return success response (might be empty for DELETE)
-      const data = await res.json().catch(() => ({ success: true }));
-      return data;
+      const parsed = await res
+        .json()
+        .catch(() => ({ success: true } as { success?: boolean }));
+      return parsed as { success?: boolean } | null;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
       queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
-      toastUtils.generic.success('MCP server deleted');
+      toastUtils.generic.success("MCP server deleted");
       onSuccess?.();
     },
     onError: (err: unknown) => {
-      const message = err instanceof Error ? err.message : 'Failed to delete MCP server';
+      const message =
+        err instanceof Error ? err.message : "Failed to delete MCP server";
       toastUtils.generic.error(message);
     },
-    
   });
 }

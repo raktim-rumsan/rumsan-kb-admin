@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Cpu, Plus, SquarePen, Trash2 } from "lucide-react";
+import { Server, Plus, SquarePen, Trash2 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 
@@ -16,25 +16,28 @@ import {
   useToggleMcpServerMutation,
   useMcpServerBySectorQuery,
 } from "@/queries/aiToolQuery";
+import type { McpServer } from "@/types/ai";
 
 import ConfirmDelete from "@/components/documents/DeleteModal";
 import { dismissToast, toastUtils } from "@/lib/toast-utils";
 import { CreateMcpServerModal } from "@/components/ai-tools/create-mcp-server-modal";
 
 export default function AiToolsManagementTab() {
-  const { data: servers , isError, isLoading, refetch } = useMcpServersQuery();
+  const { data: servers, isError, isLoading, refetch } = useMcpServersQuery();
   const deleteServerMutation = useMCPDeleteMutation();
   const toggleServerMutation = useToggleMcpServerMutation();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
-  const [currentDeleteInfo, setCurrentDeleteInfo] = useState<{ id: string; name: string } | null>(null);
+  const [currentDeleteInfo, setCurrentDeleteInfo] = useState<{
+    id: string;
+    name: string;
+  } | null>(null);
   const [editingSector, setEditingSector] = useState<string | null>(null);
 
   // Fetch server details by sector when editing
-  const { data: editingServerData, isLoading: isEditingLoading } = useMcpServerBySectorQuery(
-    editingSector || undefined
-  );
+  const { data: editingServerData, isLoading: isEditingLoading } =
+    useMcpServerBySectorQuery(editingSector || undefined);
 
   const handleDelete = () => {
     if (!currentDeleteInfo) return;
@@ -62,7 +65,6 @@ export default function AiToolsManagementTab() {
   if (isError) return <AiToolsManagementError error={isError} />;
   if (isLoading) return <AiToolsManagementLoading />;
 
-
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -74,7 +76,10 @@ export default function AiToolsManagementTab() {
           </h3>
         </div>
 
-        <Button className="bg-black hover:bg-gray-800" onClick={() => setIsCreateModalOpen(true)}>
+        <Button
+          className="bg-black hover:bg-gray-800"
+          onClick={() => setIsCreateModalOpen(true)}
+        >
           <Plus className="w-4 h-4 mr-2" />
           Add MCP Server
         </Button>
@@ -83,18 +88,18 @@ export default function AiToolsManagementTab() {
       <div className="space-y-3">
         {!servers || servers.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
-            <Cpu className="h-12 w-12 mx-auto mb-4 opacity-50" />
+            <Server className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No MCP servers available</p>
           </div>
         ) : (
-          servers.map((server: any) => (
+          servers.map((server: McpServer) => (
             <div
               key={server.id}
               className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
             >
               <div className="flex items-center gap-4 flex-1">
                 <div className="rounded-lg bg-muted p-3">
-                  <Cpu className="h-5 w-5 text-muted-foreground" />
+                  <Server className="h-5 w-5 text-muted-foreground" />
                 </div>
 
                 <div className="flex-1">
@@ -106,7 +111,9 @@ export default function AiToolsManagementTab() {
                       </span>
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground">{server.url}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {server.url}
+                  </div>
                 </div>
               </div>
 
@@ -117,7 +124,7 @@ export default function AiToolsManagementTab() {
                   size="sm"
                   className="p-2"
                   onClick={() => {
-                    setEditingSector(server.sectorName); // fetch by sector
+                    setEditingSector(server.sectorName ?? null); // fetch by sector
                     setIsCreateModalOpen(true);
                   }}
                 >

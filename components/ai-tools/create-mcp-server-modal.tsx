@@ -63,7 +63,7 @@ export function CreateMcpServerModal({
             value: String(value),
             show: false,
           }))
-        : [{ key: "", value: "", show: false }],
+        : [],
     },
   });
 
@@ -121,8 +121,8 @@ export function CreateMcpServerModal({
         return;
       }
     } else {
-      authentication = data.authentication.reduce<Record<string, string>>((acc, entry) => {
-        if (entry.key.trim()) acc[entry.key.trim()] = entry.value.trim();
+      authentication = (data.authentication ?? []).reduce<Record<string, string>>((acc, entry) => {
+        if (entry && entry.key && entry.key.trim()) acc[entry.key.trim()] = (entry.value ?? "").trim();
         return acc;
       }, {});
     }
@@ -248,42 +248,42 @@ export function CreateMcpServerModal({
 
             <div className="space-y-2">
               {!isJsonMode ? (
-                fields.map((field, idx) => (
-                  <div key={field.id} className="p-3 border rounded-lg relative">
-                    <div className="grid gap-2">
-                      <Input
-                        placeholder="key (e.g., mcp-authentication)"
-                        {...register(`authentication.${idx}.key` as const, { required: true })}
-                      />
-                      <div className="relative">
+                  fields.map((field, idx) => (
+                    <div key={field.id} className="p-3 border rounded-lg relative">
+                      <div className="grid gap-2">
                         <Input
-                          placeholder="value"
-                          type={authWatch[idx]?.show ? "text" : "password"}
-                          {...register(`authentication.${idx}.value` as const, { required: true })}
-                          className="pr-10"
+                          placeholder="key (e.g., mcp-authentication)"
+                          {...register(`authentication.${idx}.key` as const, { required: true })}
                         />
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-10 top-2 h-8 w-8 p-0"
-                          onClick={() => setValue(`authentication.${idx}.show`, !authWatch[idx]?.show)}
-                        >
-                          {authWatch[idx]?.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                        </Button>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="icon"
-                          className="absolute right-2 top-2 h-8 w-8 p-0 text-destructive"
-                          onClick={() => remove(idx)}
-                        >
-                          <Trash className="w-4 h-4" />
-                        </Button>
+                        <div className="relative">
+                          <Input
+                            placeholder="value"
+                            type={authWatch[idx]?.show ? "text" : "password"}
+                            {...register(`authentication.${idx}.value` as const, { required: true })}
+                            className="pr-10"
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-10 top-2 h-8 w-8 p-0"
+                            onClick={() => setValue(`authentication.${idx}.show`, !authWatch[idx]?.show)}
+                          >
+                            {authWatch[idx]?.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="icon"
+                            className="absolute right-2 top-2 h-8 w-8 p-0 text-destructive"
+                            onClick={() => remove(idx)}
+                          >
+                            <Trash className="w-4 h-4" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))
+                  ))
               ) : (
                 <div>
                   <textarea

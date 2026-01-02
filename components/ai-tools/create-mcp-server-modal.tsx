@@ -92,22 +92,19 @@ export function CreateMcpServerModal({
       sectorName: data?.sectorName,
       authentication,
     };
-    console.log("Payload before sector check:", payload);
 
     try {
       if (sectorName) {
         await updateMcpServer.mutateAsync(payload);
-        toastUtils.generic.success("MCP server updated");
       } else {
         await createMcpServer.mutateAsync(payload);
-        toastUtils.generic.success("MCP server created");
       }
       onSaveSuccess?.();
       reset();
       onClose();
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to save MCP server";
-      toastUtils.generic.error(message);
+      console.error("MCP save error:", message);
     } finally {
       setIsSaving(false);
     }
@@ -137,13 +134,21 @@ export function CreateMcpServerModal({
           {/* Name */}
           <div className="grid gap-2">
             <Label htmlFor="server-name">Name *</Label>
-            <Input id="server-name" {...register("name", { required: true })} />
+            <Input
+              id="server-name"
+              placeholder={!sectorName ? "MCP Server Name" : undefined}
+              {...register("name", { required: true })}
+            />
           </div>
 
           {/* URL */}
           <div className="grid gap-2">
             <Label htmlFor="server-url">URL *</Label>
-            <Input id="server-url" {...register("url", { required: true })} />
+            <Input
+              id="server-url"
+              placeholder={!sectorName ? "https://api.example.com" : undefined}
+              {...register("url", { required: true })}
+            />
           </div>
 
           {/* Sector */}

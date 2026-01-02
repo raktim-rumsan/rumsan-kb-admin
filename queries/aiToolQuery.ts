@@ -1,6 +1,7 @@
 import API_BASE_URL from "@/constants";
 import { getAuthToken } from "@/lib/utils";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { toastUtils } from "@/lib/toast-utils";
 
 export interface CreateMcpServerPayload {
   name: string;
@@ -90,6 +91,11 @@ export function useToggleMcpServerMutation() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+      toastUtils.generic.success('MCP server status changed');
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Failed to toggle MCP server';
+      toastUtils.generic.error(message);
     },
   });
 }
@@ -123,7 +129,14 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['mcpServers'] });
+      // Also invalidate sector-specific cache so next edit fetches fresh data
+      queryClient.invalidateQueries({ queryKey: ['mcpServer'] });
+      toastUtils.generic.success('MCP server created');
       onSuccess?.();
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Failed to create MCP server';
+      toastUtils.generic.error(message);
     },
   });
 }
@@ -158,7 +171,15 @@ export function useUpdateMcpServerMutation(onSuccess?: () => void) {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['mcpServers'] });
+      // Ensure any cached sector-specific entries are invalidated so
+      // useMcpServerBySectorQuery will refetch next time it's used.
+      queryClient.invalidateQueries({ queryKey: ['mcpServer'] });
+      toastUtils.generic.success('MCP server updated');
       onSuccess?.();
+    },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Failed to update MCP server';
+      toastUtils.generic.error(message);
     },
   });
 }
@@ -190,9 +211,15 @@ export function useMCPDeleteMutation(onSuccess?: () => void) {
       return data;
     },
     onSuccess: () => {
-      // Invalidate documents query to refetch the list
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+      queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
+      toastUtils.generic.success('MCP server deleted');
       onSuccess?.();
     },
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : 'Failed to delete MCP server';
+      toastUtils.generic.error(message);
+    },
+    
   });
 }

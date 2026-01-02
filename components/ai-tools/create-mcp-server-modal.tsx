@@ -48,6 +48,8 @@ export function CreateMcpServerModal({
   disableSector = false,
 }: CreateMcpServerModalProps) {
   const [isSaving, setIsSaving] = useState(false);
+  const [isJsonMode, setIsJsonMode] = useState(false);
+  const [jsonText, setJsonText] = useState("");
 
   // 2️⃣ React Hook Form — use `initialData` passed from parent (no internal query/reset)
   const { register, control, handleSubmit, reset, setValue, watch } = useForm<FormValues>({
@@ -69,6 +71,30 @@ export function CreateMcpServerModal({
   const { fields, append, remove } = useFieldArray({ control, name: "authentication" });
   const authWatch = watch("authentication");
 
+  const enterJsonMode = () => {
+    const obj: Record<string, string> = {};
+    (authWatch || []).forEach((entry) => {
+      if (entry?.key?.trim()) obj[entry.key.trim()] = entry.value ?? "";
+    });
+    setJsonText(Object.keys(obj).length ? JSON.stringify(obj, null, 2) : "{}");
+    setIsJsonMode(true);
+  };
+
+  const exitJsonMode = () => {
+    try {
+      const parsed = JSON.parse(jsonText || "{}");
+      if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+        throw new Error("Invalid JSON object");
+      }
+      const arr: AuthEntry[] = Object.entries(parsed).map(([k, v]) => ({ key: k, value: String(v ?? ""), show: false }));
+      setValue("authentication", arr);
+      setIsJsonMode(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Invalid JSON";
+      toastUtils.generic.error(message);
+    }
+  };
+
   // 5️⃣ Mutations
   const createMcpServer = useCreateMcpServerMutation(() => {
     reset();
@@ -80,10 +106,26 @@ export function CreateMcpServerModal({
   const onSubmit = async (data: FormValues) => {
     setIsSaving(true);
 
-    const authentication = data.authentication.reduce<Record<string, string>>((acc, entry) => {
-      if (entry.key.trim()) acc[entry.key.trim()] = entry.value.trim();
-      return acc;
-    }, {});
+    let authentication: Record<string, string> = {};
+    if (isJsonMode) {
+      try {
+        const parsed = JSON.parse(jsonText || "{}");
+        if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid JSON");
+        Object.entries(parsed).forEach(([k, v]) => {
+          if (String(k).trim()) authentication[String(k).trim()] = String(v ?? "").trim();
+        });
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Invalid JSON";
+        toastUtils.generic.error(message);
+        setIsSaving(false);
+        return;
+      }
+    } else {
+      authentication = data.authentication.reduce<Record<string, string>>((acc, entry) => {
+        if (entry.key.trim()) acc[entry.key.trim()] = entry.value.trim();
+        return acc;
+      }, {});
+    }
 
     const payload = {
       id: initialData?.id,
@@ -187,54 +229,74 @@ export function CreateMcpServerModal({
           <div className="grid gap-2">
             <div className="flex items-start justify-between">
               <div>
-                <Label htmlFor="authentication">Authentication *</Label>
+                <Label htmlFor="authentication">Authentication (Optional)</Label>
                 <p className="text-sm text-muted-foreground">Add authentication for the MCP server</p>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm">JSON</Button>
-                <Button variant="outline" size="sm" type="button" onClick={() => append({ key: "", value: "", show: false })}>
-                  <Plus className="w-4 h-4 mr-2" /> Add
-                </Button>
+                {!isJsonMode ? (
+                  <Button type="button" variant="outline" size="sm" onClick={enterJsonMode}>JSON</Button>
+                ) : (
+                  <Button type="button" variant="outline" size="sm" onClick={exitJsonMode}>Switch to Form</Button>
+                )}
+                {!isJsonMode && (
+                  <Button variant="outline" size="sm" type="button" onClick={() => append({ key: "", value: "", show: false })}>
+                    <Plus className="w-4 h-4 mr-2" /> Add
+                  </Button>
+                )}
               </div>
             </div>
 
             <div className="space-y-2">
-              {fields.map((field, idx) => (
-                <div key={field.id} className="p-3 border rounded-lg relative">
-                  <div className="grid gap-2">
-                    <Input
-                      placeholder="key (e.g., mcp-authentication)"
-                      {...register(`authentication.${idx}.key` as const, { required: true })}
-                    />
-                    <div className="relative">
+              {!isJsonMode ? (
+                fields.map((field, idx) => (
+                  <div key={field.id} className="p-3 border rounded-lg relative">
+                    <div className="grid gap-2">
                       <Input
-                        placeholder="value"
-                        type={authWatch[idx]?.show ? "text" : "password"}
-                        {...register(`authentication.${idx}.value` as const, { required: true })}
-                        className="pr-10"
+                        placeholder="key (e.g., mcp-authentication)"
+                        {...register(`authentication.${idx}.key` as const, { required: true })}
                       />
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-10 top-2 h-8 w-8 p-0"
-                        onClick={() => setValue(`authentication.${idx}.show`, !authWatch[idx]?.show)}
-                      >
-                        {authWatch[idx]?.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-2 top-2 h-8 w-8 p-0 text-destructive"
-                        onClick={() => remove(idx)}
-                      >
-                        <Trash className="w-4 h-4" />
-                      </Button>
+                      <div className="relative">
+                        <Input
+                          placeholder="value"
+                          type={authWatch[idx]?.show ? "text" : "password"}
+                          {...register(`authentication.${idx}.value` as const, { required: true })}
+                          className="pr-10"
+                        />
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-10 top-2 h-8 w-8 p-0"
+                          onClick={() => setValue(`authentication.${idx}.show`, !authWatch[idx]?.show)}
+                        >
+                          {authWatch[idx]?.show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon"
+                          className="absolute right-2 top-2 h-8 w-8 p-0 text-destructive"
+                          onClick={() => remove(idx)}
+                        >
+                          <Trash className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </div>
                   </div>
+                ))
+              ) : (
+                <div>
+                  <textarea
+                    className="w-full min-h-[120px] rounded-md border p-3 text-sm font-mono bg-background"
+                    value={jsonText}
+                    onChange={(e) => setJsonText(e.target.value)}
+                    placeholder={`{
+  "mcp-authentication": "secret"
+}`}
+                  />
+                  <p className="text-xs text-muted-foreground mt-2">Enter headers as a JSON object with string key-value pairs.</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
 

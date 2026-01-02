@@ -6,7 +6,7 @@ export interface CreateMcpServerPayload {
   name: string;
   url: string;
   sectorName: string;
-  mcpAuthToken: Record<string, string>;
+  authentication: Record<string, string>;
 }
 
 // Add MCP server types and queries/mutations
@@ -15,81 +15,9 @@ export interface McpServer {
   name: string;
   url: string;
   sectorName?: string;
-  mcpAuthToken?: string | Record<string, string>;
-  isActive?: boolean;
   createdAt?: string;
   updatedAt?: string;
 }
-
-export function useAiToolsQuery() {
-  return useQuery({
-    queryKey: ["aiTools"],
-    queryFn: async () => {
-      // Build query string if needed
-
-      // Call local proxy API to avoid CORS issues
-      // const res = await fetch(`/api/ai-tools`);
-      // const data = await res.json();
-
-      // if (!res.ok) {
-      //   throw new Error(data.message || `HTTP ${res.status}`);
-      // }
-      // Optional: filter or transform the data if needed
-      // console.log("Fetched AI Tools data:", data);
-      // return data;
-      return {
-        tools: [
-          {
-            id: "web_search",
-            name: "web_search",
-            doc: "Search the web for real-time information",
-            sector: "general",
-          },
-          {
-            id: "calculator",
-            name: "calculator",
-            doc: "Perform mathematical calculations",
-            sector: "general",
-          },
-          {
-            id: "code_interpreter",
-            name: "code_interpreter",
-            doc: "Run and analyze code",
-            sector: "developer",
-          },
-        ],
-      }
-    },
-    staleTime: 1000 * 60 * 5, // cache for 5 minutes
-  });
-}
-
-
-export function useDeleteAiToolMock() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (toolId: string) => {
-      // mock delay (optional)
-      await new Promise((r) => setTimeout(r, 300));
-      return toolId;
-    },
-    onSuccess: (toolId) => {
-      queryClient.setQueryData(["aiTools"], (oldData: any) => {
-        if (!oldData) return oldData;
-
-        return {
-          ...oldData,
-          tools: oldData.tools.filter(
-            (tool: any) => tool.id !== toolId
-          ),
-        };
-      });
-    },
-  });
-}
-
-
 
 export function useMcpServersQuery() {
   return useQuery({
@@ -112,13 +40,15 @@ export function useMcpServersQuery() {
   });
 }
 
-export function useDeleteMcpServerMutation() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: async (id: string) => {
+export function useMcpServerBySectorQuery(sectorName?: string) {
+  console.log(`${API_BASE_URL}/mcp-servers/sector/${sectorName}`,"----------------------------")
+  console.log("Using MCP Server Query for sector:", sectorName);
+  return useQuery({
+    queryKey: ["mcpServer", sectorName],
+    queryFn: async () => {
+      if (!sectorName) return null;
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/mcp-servers/${id}`, {
-        method: "DELETE",
+      const res = await fetch(`${API_BASE_URL}/mcp-servers/sector/${sectorName}`, {
         headers: {
           accept: "application/json",
           access_token: access_token || "",
@@ -128,27 +58,24 @@ export function useDeleteMcpServerMutation() {
       if (!res.ok) {
         throw new Error(data?.message || `HTTP ${res.status}`);
       }
-      return data;
+      return data?.data ?? null;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
-    },
+    // enabled: !!sectorName, // only run if sectorName exists
+    staleTime: 1000 * 60 * 2,
   });
 }
 
 export function useToggleMcpServerMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+    mutationFn: async (serverId: string) => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/mcp-servers/${id}`, {
+      const res = await fetch(`${API_BASE_URL}/mcp-servers/${serverId}`, {
         method: "PATCH",
         headers: {
-          "Content-Type": "application/json",
           accept: "application/json",
           access_token: access_token || "",
         },
-        body: JSON.stringify({ isActive }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
@@ -162,7 +89,6 @@ export function useToggleMcpServerMutation() {
   });
 }
 
-// Update create mutation to invalidate mcpServers (instead of aiTools)
 export function useCreateMcpServerMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
@@ -197,50 +123,70 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
   });
 }
 
-
-// This simulates toggling a tool on/off for a workspace
-export function useToggleAiToolMutation() {
+export function useUpdateMcpServerMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({
-      toolId,
-      workspaceSlug,
-      enabled,
-    }: {
-      toolId: string;
-      workspaceSlug?: string;
-      enabled: boolean;
-    }) => {
-      // Simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 200));
+    mutationFn: async (payload: CreateMcpServerPayload) => {
+      const access_token = getAuthToken();
 
-      // Return the updated tool (mock)
-      return { toolId, enabled };
-    },
-    // Optimistic update: immediately update local query cache
-    onMutate: async ({ toolId,  enabled }) => {
-      const queryKey = ["aiTools"];
-      const previousTools = queryClient.getQueryData(queryKey);
-
-      queryClient.setQueryData(queryKey, (old: any) =>
-        old?.map((tool: any) =>
-          tool.id === toolId ? { ...tool, enabled } : tool
-        )
-      );
-
-      return { previousTools };
-    },
-    // If mutation fails, rollback
-    onError: (_err, _variables, context: any) => {
-      const queryKey = ["aiTools", ];
-      queryClient.setQueryData(queryKey, context.previousTools);
-    },
-    // After mutation, refetch query (optional)
-    onSettled: (_data, _error) => {
-      queryClient.invalidateQueries({
-        queryKey: ["aiTools"],
+      const res = await fetch(`${API_BASE_URL}/mcp-servers`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json', 
+          access_token: access_token || "",
+          accept: "application/json",
+        },
+        body: JSON.stringify(payload),
       });
+
+      const data = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        const errorMessage =
+          data?.message || data?.error || `HTTP ${res.status}: ${res.statusText}`;
+        throw new Error(errorMessage);
+      }
+
+      return data; // The created MCP server
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['mcpServers'] });
+      onSuccess?.();
+    },
+  });
+}
+
+export function useMCPDeleteMutation(onSuccess?: () => void) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (serverId: string) => {
+      const access_token = getAuthToken();
+      const res = await fetch(`${API_BASE_URL}/mcp-servers/${serverId}`, {
+        method: "DELETE",
+        headers: {
+          accept: "application/json",
+          access_token: access_token || "",
+        },
+      });
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        // Handle API error responses properly
+        const errorMessage =
+          errorData.message || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+        throw new Error(errorMessage);
+      }
+
+      // Return success response (might be empty for DELETE)
+      const data = await res.json().catch(() => ({ success: true }));
+      return data;
+    },
+    onSuccess: () => {
+      // Invalidate documents query to refetch the list
+      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+      onSuccess?.();
     },
   });
 }

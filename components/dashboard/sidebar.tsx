@@ -19,6 +19,11 @@ const navigationItems = [
     icon: FolderOpen,
     href: "/dashboard/documents",
   },
+   {
+    title: "AI Tool Management",
+    icon: FolderOpen,
+    href: "/dashboard/ai-tools",
+  },
 
 ];
 

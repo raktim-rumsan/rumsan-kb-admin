@@ -23,6 +23,7 @@ import {
 import { useDocuments, useSetDocuments } from "@/stores/documentsStore";
 import { DocumentsResponseSchema } from "@/lib/schemas";
 import { Switch } from "@/components/ui/switch";
+import ConfirmDelete from "@/components/documents/DeleteModal";
 
 interface Document {
   id: string;
@@ -37,8 +38,11 @@ interface Document {
 export default function DocumentsPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [trainingDocumentId, setTrainingDocumentId] = useState<string | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+ const [currentDeleteInfo, setCurrentDeleteInfo] = useState<{
+    id: string;
+    fileName: string;
+  } | null>(null);
   // Use both TanStack Query and Zustand store
   const { data, isLoading, error, refetch } = useDocsQuery();
   const documentsFromStore = useDocuments();
@@ -120,23 +124,22 @@ export default function DocumentsPage() {
     // Note: The store will be updated when the query refetches
   });
 
-  const handleDelete = async (id: string, fileName: string) => {
-    if (
-      window.confirm(`Are you sure you want to delete "${fileName}"? This action cannot be undone.`)
-    ) {
-      const loadingToastId = toastUtils.generic.loading("Deleting document...");
+   const handleDelete = async () => {
+    if (!currentDeleteInfo) return;
+    const loadingToastId = toastUtils.generic.loading("Deleting document...");
 
-      deleteMutation.mutate(id, {
-        onError: (error: unknown) => {
-          dismissToast(loadingToastId);
-          const errorMessage = error instanceof Error ? error.message : undefined;
-          toastUtils.data.deleteError(errorMessage);
-        },
-        onSuccess: () => {
-          dismissToast(loadingToastId);
-        },
-      });
-    }
+    deleteMutation.mutate(currentDeleteInfo.id, {
+      onError: (error: unknown) => {
+        dismissToast(loadingToastId);
+        const errorMessage = error instanceof Error ? error.message : undefined;
+        toastUtils.data.deleteError(errorMessage);
+      },
+      onSuccess: () => {
+        dismissToast(loadingToastId);
+        setOpenDeleteModal(false);
+        setCurrentDeleteInfo(null);
+      },
+    });
   };
 
   const formatDate = (dateString: string) => {
@@ -187,10 +190,16 @@ export default function DocumentsPage() {
                         <TableCell>{doc?.industry?.toLocaleUpperCase()}</TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            <Button
+                           <Button
                               variant="outline"
                               size="sm"
-                              onClick={() => handleDelete(doc.id, doc.fileName)}
+                              onClick={() => {
+                                setCurrentDeleteInfo({
+                                  id: doc.id,
+                                  fileName: doc.fileName,
+                                });
+                                setOpenDeleteModal(true);
+                              }}
                               className="text-red-600 hover:text-red-700"
                               disabled={deleteMutation.isPending}
                             >
@@ -234,18 +243,13 @@ export default function DocumentsPage() {
         }}
         currentDocumentCount={currentDocumentCount}
       />
-      {previewUrl && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg shadow-lg p-4 max-w-3xl w-full relative">
-            <button
-              className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
-              onClick={() => setPreviewUrl(null)}
-            >
-              Close
-            </button>
-          </div>
-        </div>
-      )}
+       <ConfirmDelete
+        isOpen={openDeleteModal}
+        setIsOpen={setOpenDeleteModal}
+        onConfirm={handleDelete}
+        isDeleting={deleteMutation.isPending}
+        item={currentDeleteInfo?.fileName || ""}
+      />
     </div>
   );
 }

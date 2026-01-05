@@ -6,7 +6,6 @@ import type {
   McpServer,
   CreateMcpServerPayload,
   UpdateMcpServerPayload,
-  ApiResponse,
 } from "@/types/ai";
 
 export function useMcpServersQuery() {
@@ -17,18 +16,13 @@ export function useMcpServersQuery() {
       const res = await fetch(`${ROUTES.MCP_SERVERS}`, {
         headers: {
           accept: "application/json",
-          access_token: access_token || "",
+          access_token: access_token!,
         },
       });
-      const parsed = (await res
-        .json()
-        .catch(() => ({} as ApiResponse<McpServer[]>))) as ApiResponse<
-        McpServer[]
-      >;
-      if (!res.ok) {
-        throw new Error(parsed?.message || `HTTP ${res.status}`);
-      }
-      return (parsed.data ?? []) as McpServer[];
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      return data.data as McpServer[];
     },
     staleTime: 1000 * 60 * 2,
   });
@@ -37,22 +31,19 @@ export function useMcpServersQuery() {
 export function useMcpServerBySectorQuery(sectorName?: string) {
   return useQuery({
     queryKey: ["mcpServer", sectorName],
-    queryFn: async (): Promise<McpServer | null> => {
+    queryFn: async () => {
       if (!sectorName) return null;
       const access_token = getAuthToken();
       const res = await fetch(`${ROUTES.MCP_SERVER_BY_SECTOR(sectorName)}`, {
         headers: {
           accept: "application/json",
-          access_token: access_token || "",
+          access_token: access_token!,
         },
       });
-      const parsed = (await res
-        .json()
-        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
-      if (!res.ok) {
-        throw new Error(parsed?.message || `HTTP ${res.status}`);
-      }
-      return (parsed.data ?? null) as McpServer | null;
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      return data.data as McpServer[];
     },
     enabled: !!sectorName,
     staleTime: 1000 * 60 * 2,
@@ -62,26 +53,24 @@ export function useMcpServerBySectorQuery(sectorName?: string) {
 export function useToggleMcpServerMutation() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (serverId: string): Promise<McpServer | null> => {
+    mutationFn: async (serverId: string) => {
       const access_token = getAuthToken();
       const res = await fetch(`${ROUTES.MCP_TOOGGLE_SERVER(serverId)}`, {
         method: "PATCH",
         headers: {
           accept: "application/json",
-          access_token: access_token || "",
+          access_token: access_token!,
         },
       });
-      const parsed = (await res
-        .json()
-        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
+      const data = await res.json();
       if (!res.ok) {
-        throw new Error(parsed?.message || `HTTP ${res.status}`);
+        throw new Error(data?.message || `HTTP ${res.status}`);
       }
-      return (parsed.data ?? null) as McpServer | null;
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
-      toastUtils.generic.success("MCP server status changed");
+      toastUtils.generic.success(data.data.message);
     },
     onError: (err: unknown) => {
       const message =
@@ -95,36 +84,25 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      payload: CreateMcpServerPayload
-    ): Promise<McpServer | null> => {
+    mutationFn: async (payload: CreateMcpServerPayload) => {
       const access_token = getAuthToken();
 
       const res = await fetch(`${ROUTES.MCP_CREATE_SERVER}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          access_token: access_token || "",
+          access_token: access_token!,
           accept: "application/json",
         },
         body: JSON.stringify(payload),
       });
 
-      const parsed = (await res
-        .json()
-        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
-
-      if (!res.ok) {
-        const errorMessage =
-          parsed?.message ||
-          parsed?.error ||
-          `HTTP ${res.status}: ${res.statusText}`;
-        throw new Error(errorMessage);
-      }
-
-      return (parsed.data ?? null) as McpServer | null;
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      return data.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
       queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
       toastUtils.generic.success("MCP server created");
@@ -142,9 +120,7 @@ export function useUpdateMcpServerMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (
-      payload: UpdateMcpServerPayload
-    ): Promise<McpServer | null> => {
+    mutationFn: async (payload: UpdateMcpServerPayload) => {
       const access_token = getAuthToken();
       const { id: serverId } = payload;
 
@@ -152,25 +128,23 @@ export function useUpdateMcpServerMutation(onSuccess?: () => void) {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          access_token: access_token || "",
+          access_token: access_token!,
           accept: "application/json",
         },
         body: JSON.stringify(payload),
       });
 
-      const parsed = (await res
-        .json()
-        .catch(() => ({} as ApiResponse<McpServer>))) as ApiResponse<McpServer>;
+      const data = await res.json();
 
       if (!res.ok) {
         const errorMessage =
-          parsed?.message ||
-          parsed?.error ||
+          data?.message ||
+          data?.error ||
           `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
 
-      return (parsed.data ?? null) as McpServer | null;
+      return data.data;
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
@@ -198,26 +172,14 @@ export function useMCPDeleteMutation(onSuccess?: () => void) {
         method: "DELETE",
         headers: {
           accept: "application/json",
-          access_token: access_token || "",
+          access_token: access_token!,
         },
       });
 
-      if (!res.ok) {
-        const errorData = await res
-          .json()
-          .catch(() => ({} as ApiResponse<null>));
-        const errorMessage =
-          errorData.message ||
-          errorData.error ||
-          `HTTP ${res.status}: ${res.statusText}`;
-        throw new Error(errorMessage);
-      }
-
-      // Return success response (might be empty for DELETE)
-      const parsed = await res
-        .json()
-        .catch(() => ({ success: true } as { success?: boolean }));
-      return parsed as { success?: boolean } | null;
+      const data = await res.json();
+      if (!res.ok)
+        throw new Error(data.message || data.error || `HTTP ${res.status}`);
+      return data.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });

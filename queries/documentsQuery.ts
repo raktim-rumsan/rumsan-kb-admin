@@ -1,15 +1,14 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { getAuthToken } from "@/lib/utils";
 
-import API_BASE_URL from "@/constants";
-
+import { ROUTES } from "@/constants";
 
 export function useDocUploadMutation(onSuccess?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (
-      payload: File | FormData | { file: File; industry?: string },
+      payload: File | FormData | { file: File; industry?: string }
     ) => {
       const access_token = getAuthToken();
 
@@ -20,51 +19,53 @@ export function useDocUploadMutation(onSuccess?: () => void) {
       if (payload instanceof FormData) {
         formData = payload;
         // Try to read industry from FormData if present
-        const industryValue = formData.get('industry');
-        if (typeof industryValue === 'string') industry = industryValue;
+        const industryValue = formData.get("industry");
+        if (typeof industryValue === "string") industry = industryValue;
       } else if (payload instanceof File) {
         formData = new FormData();
-        formData.append('file', payload);
+        formData.append("file", payload);
       } else {
         formData = new FormData();
-        formData.append('file', payload.file);
+        formData.append("file", payload.file);
         if (payload.industry) {
-          formData.append('industry', payload.industry);
+          formData.append("industry", payload.industry);
           industry = payload.industry;
         }
       }
 
       // Build headers, only add x-industry if defined
       const headers: Record<string, string> = {};
-      if (access_token) headers['access_token'] = access_token;
-      if (industry) headers['x-industry'] = industry;
+      if (access_token) headers["access_token"] = access_token;
+      if (industry) headers["x-industry"] = industry;
 
-      const res = await fetch(`${API_BASE_URL}/admin/docs/upload`, {
-        method: 'POST',
+      const res = await fetch(`${ROUTES.UPLOAD_DOCUMENTS}`, {
+        method: "POST",
         body: formData,
         headers,
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) {
-       const errorMessage = data?.message || data?.error || `HTTP ${res.status}: ${res.statusText}`;
+        const errorMessage =
+          data?.message ||
+          data?.error ||
+          `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['documents'] });
+      queryClient.invalidateQueries({ queryKey: ["documents"] });
       onSuccess?.();
     },
   });
 }
 
 export function useDocsQuery() {
-
   return useQuery({
     queryKey: ["documents"],
     queryFn: async () => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/admin/docs`, {
+      const res = await fetch(`${ROUTES.DOCUMENTS}`, {
         method: "GET",
         headers: {
           access_token: access_token || "",
@@ -74,7 +75,8 @@ export function useDocsQuery() {
       const data = await res.json();
       if (!res.ok) {
         // Handle API error responses properly
-        const errorMessage = data.message || data.error || `HTTP ${res.status}: ${res.statusText}`;
+        const errorMessage =
+          data.message || data.error || `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
       return data;
@@ -88,7 +90,7 @@ export function useDocDeleteMutation(onSuccess?: () => void) {
   return useMutation({
     mutationFn: async (documentId: string) => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/admin/docs/${documentId}`, {
+      const res = await fetch(`${ROUTES.DELETE_DOCUMENT(documentId)}`, {
         method: "DELETE",
         headers: {
           accept: "application/json",
@@ -100,7 +102,9 @@ export function useDocDeleteMutation(onSuccess?: () => void) {
         const errorData = await res.json().catch(() => ({}));
         // Handle API error responses properly
         const errorMessage =
-          errorData.message || errorData.error || `HTTP ${res.status}: ${res.statusText}`;
+          errorData.message ||
+          errorData.error ||
+          `HTTP ${res.status}: ${res.statusText}`;
         throw new Error(errorMessage);
       }
 
@@ -122,7 +126,7 @@ export function useEmbeddingMutation(onSuccess?: () => void) {
   return useMutation({
     mutationFn: async (documentId: string) => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/admin/embeddings`, {
+      const res = await fetch(`${ROUTES.EMBEDDINGS}`, {
         method: "POST",
         headers: {
           accept: "application/json",
@@ -138,7 +142,9 @@ export function useEmbeddingMutation(onSuccess?: () => void) {
         const errorData = await res.json().catch(() => ({}));
         // API returns error message in 'message' field
         const errorMessage =
-          errorData.message || errorData.error || `Failed to train document (${res.status})`;
+          errorData.message ||
+          errorData.error ||
+          `Failed to train document (${res.status})`;
         throw new Error(errorMessage);
       }
 
@@ -159,7 +165,7 @@ export function useUnembeddingMutation(onSuccess?: () => void) {
   return useMutation({
     mutationFn: async (documentId: string) => {
       const access_token = getAuthToken();
-      const res = await fetch(`${API_BASE_URL}/admin/embeddings/unembed`, {
+      const res = await fetch(`${ROUTES.UNEMBEDDINGS}`, {
         method: "POST",
         headers: {
           accept: "application/json",
@@ -175,7 +181,9 @@ export function useUnembeddingMutation(onSuccess?: () => void) {
         const errorData = await res.json().catch(() => ({}));
         // API returns error message in 'message' field
         const errorMessage =
-          errorData.message || errorData.error || `Failed to train document (${res.status})`;
+          errorData.message ||
+          errorData.error ||
+          `Failed to train document (${res.status})`;
         throw new Error(errorMessage);
       }
 
@@ -190,7 +198,10 @@ export function useUnembeddingMutation(onSuccess?: () => void) {
   });
 }
 
-export async function viewDocument(url: string, setPreviewUrl: (url: string | null) => void) {
+export async function viewDocument(
+  url: string,
+  setPreviewUrl: (url: string | null) => void
+) {
   const serverUrl = process.env.NEXT_PUBLIC_SERVER_API!;
   const accessToken = getAuthToken();
   const fileUrl = `${serverUrl}/${url.replace(/^\/+/, "")}`;
@@ -203,12 +214,16 @@ export async function viewDocument(url: string, setPreviewUrl: (url: string | nu
     try {
       const errorData = await response.json();
       const errorMessage =
-        errorData.message || errorData.error || `HTTP ${response.status}: ${response.statusText}`;
+        errorData.message ||
+        errorData.error ||
+        `HTTP ${response.status}: ${response.statusText}`;
       throw new Error(errorMessage);
     } catch {
       // If response is not JSON, fall back to response text
       const errorText = await response.text();
-      throw new Error(errorText || `HTTP ${response.status}: ${response.statusText}`);
+      throw new Error(
+        errorText || `HTTP ${response.status}: ${response.statusText}`
+      );
     }
   }
 

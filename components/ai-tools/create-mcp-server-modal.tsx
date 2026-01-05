@@ -208,7 +208,7 @@ export function CreateMcpServerModal({
             <Label htmlFor="server-name">Name *</Label>
             <Input
               id="server-name"
-              placeholder={!sectorName ? "MCP Server Name" : undefined}
+              placeholder={!sectorName ? "MCP Server Name" : ""}
               {...register("name", { required: true })}
             />
           </div>
@@ -218,7 +218,7 @@ export function CreateMcpServerModal({
             <Label htmlFor="server-url">URL *</Label>
             <Input
               id="server-url"
-              placeholder={!sectorName ? "https://api.example.com" : undefined}
+              placeholder={!sectorName ? "https://api.example.com" : ""}
               {...register("url", { required: true })}
             />
           </div>

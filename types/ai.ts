@@ -32,5 +32,3 @@ export interface UpdateMcpServerPayload {
   sectorName?: string;
   authentication?: Record<string, string>;
 }
-
-export type ApiResponse<T> = { data?: T; message?: string; error?: string };

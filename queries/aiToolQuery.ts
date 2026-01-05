@@ -43,7 +43,7 @@ export function useMcpServerBySectorQuery(sectorName?: string) {
       const data = await res.json();
       if (!res.ok)
         throw new Error(data.message || data.error || `HTTP ${res.status}`);
-      return data.data as McpServer[];
+      return data.data;
     },
     enabled: !!sectorName,
     staleTime: 1000 * 60 * 2,

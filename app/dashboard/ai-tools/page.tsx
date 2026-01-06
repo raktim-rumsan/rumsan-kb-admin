@@ -1,20 +1,30 @@
 "use client";
 
 import { useState } from "react";
-import { Server, Plus, SquarePen, Trash2 } from "lucide-react";
+import {
+  Server,
+  Plus,
+  SquarePen,
+  Trash2,
+  ChevronDown,
+  RefreshCcw,
+  Copy,
+} from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 
 import {
   AiToolsManagementError,
   AiToolsManagementLoading,
-} from "../../../components/ai-tools/ai-tool-management-loading";
+} from "@/components/ai-tools/ai-tool-management-loading";
 
 import {
   useMCPDeleteMutation,
   useMcpServersQuery,
   useToggleMcpServerMutation,
   useMcpServerBySectorQuery,
+  useToggleMcpToolsMutation,
+  useSyncMcpServerToolsMutation,
 } from "@/queries/aiToolQuery";
 import type { McpServer } from "@/types/ai";
 
@@ -26,6 +36,8 @@ export default function AiToolsManagementTab() {
   const { data: servers, isError, isLoading, refetch } = useMcpServersQuery();
   const deleteServerMutation = useMCPDeleteMutation();
   const toggleServerMutation = useToggleMcpServerMutation();
+  const toggleToolMutation = useToggleMcpToolsMutation();
+  const syncToolsMutation = useSyncMcpServerToolsMutation();
 
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
@@ -34,10 +46,11 @@ export default function AiToolsManagementTab() {
     name: string;
   } | null>(null);
   const [editingSector, setEditingSector] = useState<string | null>(null);
+  const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
 
   // Fetch server details by sector when editing
   const { data: editingServerData, isLoading: isEditingLoading } =
-    useMcpServerBySectorQuery(editingSector || undefined);
+    useMcpServerBySectorQuery(editingSector || "");
 
   const handleDelete = () => {
     if (!currentDeleteInfo) return;
@@ -58,8 +71,24 @@ export default function AiToolsManagementTab() {
     });
   };
 
-  const handleToggle = (serverId: string) => {
+  const handleToggleServer = (serverId: string) => {
     toggleServerMutation.mutate(serverId);
+  };
+
+  const handleToggleTool = (serverId: string, toolId: string) => {
+    toggleToolMutation.mutate({ serverId, toolId });
+  };
+
+  const handleSync = (serverId: string) => {
+    syncToolsMutation.mutate(serverId);
+  };
+
+  const humanizeToolName = (name: string): string =>
+    name.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    toastUtils.generic.success("Copied to clipboard");
   };
 
   if (isError) return <AiToolsManagementError error={isError} />;
@@ -95,61 +124,136 @@ export default function AiToolsManagementTab() {
           servers.map((server: McpServer) => (
             <div
               key={server.id}
-              className="flex items-center justify-between p-4 rounded-lg border bg-card hover:bg-accent/50 transition-colors"
+              className="rounded-lg border bg-card overflow-hidden"
             >
-              <div className="flex items-center gap-4 flex-1">
-                <div className="rounded-lg bg-muted p-3">
-                  <Server className="h-5 w-5 text-muted-foreground" />
-                </div>
+              <div className="flex items-center justify-between p-4 hover:bg-accent/50 transition-colors">
+                <div className="flex items-center gap-4 flex-1">
+                  <Button
+                    variant="ghost"
+                    aria-label="expand"
+                    onClick={() =>
+                      setExpandedServerId(
+                        expandedServerId === server.id ? null : server.id
+                      )
+                    }
+                    className="transform transition-transform"
+                  >
+                    <ChevronDown
+                      className={`h-5 w-5 text-muted-foreground ${
+                        expandedServerId === server.id ? "rotate-180" : ""
+                      }`}
+                    />
+                  </Button>
 
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <div className="font-medium">{server.name}</div>
-                    {server.sectorName && (
-                      <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
-                        {server.sectorName}
-                      </span>
+                  <div className="rounded-lg bg-muted p-3">
+                    <Server className="h-5 w-5 text-muted-foreground" />
+                  </div>
+
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <div className="font-medium">{server.name}</div>
+                      {server.sectorName && (
+                        <span className="text-xs px-2 py-1 rounded-md bg-muted text-muted-foreground">
+                          {server.sectorName.charAt(0).toUpperCase() +
+                            server.sectorName.slice(1)}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                      <span>{server.url}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="p-1"
+                        onClick={() => handleCopy(server.url)}
+                      >
+                        <Copy className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                    onClick={() => handleSync(server.id)}
+                  >
+                    <RefreshCcw className="w-5 h-5 mr-2" />
+                  </Button>
+
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2"
+                    onClick={() => {
+                      setEditingSector(server.sectorName ?? ""); // fetch by sector
+                      setIsCreateModalOpen(true);
+                    }}
+                  >
+                    <SquarePen className="w-5 h-5 mr-2" />
+                  </Button>
+                  <Switch
+                    checked={server.isActive}
+                    disabled={toggleServerMutation.isPending}
+                    onCheckedChange={() => handleToggleServer(server.id)}
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-red-600 hover:text-red-700 p-2"
+                    onClick={() => {
+                      setCurrentDeleteInfo({
+                        id: server.id,
+                        name: server.name,
+                      });
+                      setOpenDeleteModal(true);
+                    }}
+                  >
+                    <Trash2 className="w-4 h-4 mr-2" />
+                  </Button>
+                </div>
+              </div>
+
+              {expandedServerId === server.id && (
+                <div className="border-t p-4 bg-transparent">
+                  <div className="text-xs text-muted-foreground font-medium mb-3">
+                    AVAILABLE TOOLS ({server.mcpTools?.length ?? 0})
+                  </div>
+
+                  <div className="space-y-3">
+                    {(server.mcpTools ?? []).length === 0 ? (
+                      <div className="text-sm text-muted-foreground">
+                        No tools available for this server.
+                      </div>
+                    ) : (
+                      (server.mcpTools ?? []).map((tool) => (
+                        <div
+                          key={tool.id}
+                          className="flex items-center justify-between p-4 rounded-lg border"
+                        >
+                          <div>
+                            <div className="font-medium">
+                              {humanizeToolName(tool.name)}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {tool.description}
+                            </div>
+                          </div>
+
+                          <Switch
+                            checked={tool.isActive}
+                            disabled={toggleToolMutation.isPending}
+                            onCheckedChange={() =>
+                              handleToggleTool(server.id, tool.id)
+                            }
+                          />
+                        </div>
+                      ))
                     )}
                   </div>
-                  <div className="text-sm text-muted-foreground">
-                    {server.url}
-                  </div>
                 </div>
-              </div>
-
-              <div className="flex items-center gap-4">
-                {/* Edit Button */}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="p-2"
-                  onClick={() => {
-                    setEditingSector(server.sectorName ?? null); // fetch by sector
-                    setIsCreateModalOpen(true);
-                  }}
-                >
-                  <SquarePen className="w-5 h-5 mr-2" />
-                </Button>
-
-                {/* Toggle Active */}
-                <Switch
-                  checked={server.isActive}
-                  disabled={toggleServerMutation.isPending}
-                  onCheckedChange={() => handleToggle(server.id)}
-                />
-
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="text-red-600 hover:text-red-700 p-2"
-                  onClick={() => {
-                    setCurrentDeleteInfo({ id: server.id, name: server.name });
-                    setOpenDeleteModal(true);
-                  }}
-                >
-                  <Trash2 className="w-4 h-4 mr-2" />
-                </Button>
-              </div>
+              )}
             </div>
           ))
         )}

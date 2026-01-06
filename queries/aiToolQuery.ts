@@ -194,3 +194,76 @@ export function useMCPDeleteMutation(onSuccess?: () => void) {
     },
   });
 }
+
+export function useToggleMcpToolsMutation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async ({
+      serverId,
+      toolId,
+    }: {
+      serverId: string;
+      toolId: string;
+    }) => {
+      const access_token = getAuthToken();
+      const res = await fetch(`${ROUTES.MCP_TOOGGLE_TOOL(serverId, toolId)}`, {
+        method: "PATCH",
+        headers: {
+          accept: "application/json",
+          access_token: access_token!,
+        },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.message || `HTTP ${res.status}`);
+      }
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+      toastUtils.generic.success("MCP Tool toggled successfully");
+    },
+    onError: (err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : "Failed to toggle MCP tool";
+      toastUtils.generic.error(message);
+    },
+  });
+}
+
+export function useSyncMcpServerToolsMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (serverId: string) => {
+      const access_token = getAuthToken();
+
+      const res = await fetch(ROUTES.MCP_SYNC_TOOLS(serverId), {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          access_token: access_token!,
+        },
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.message || `HTTP ${res.status}`);
+      }
+      return data;
+    },
+
+    onSuccess: (data) => {
+      // Refresh servers + tools list
+      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+      toastUtils.generic.success("Tools synced successfully");
+    },
+
+    onError: (err) => {
+      const message =
+        err instanceof Error ? err.message : "Failed to sync tools";
+      toastUtils.generic.error(message);
+    },
+  });
+}

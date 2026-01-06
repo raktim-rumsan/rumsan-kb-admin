@@ -16,6 +16,7 @@ export interface McpServer {
   authentication?: Record<string, string>;
   createdAt?: string;
   updatedAt?: string;
+  mcpTools?: McpTool[];
 }
 
 export interface CreateMcpServerPayload {
@@ -23,6 +24,16 @@ export interface CreateMcpServerPayload {
   url: string;
   sectorName?: string;
   authentication: Record<string, string>;
+}
+
+export interface McpTool {
+  id: string;
+  mcpServerId?: string;
+  name: string;
+  description?: string;
+  isActive?: boolean;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface UpdateMcpServerPayload {

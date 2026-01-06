@@ -259,9 +259,7 @@ export function CreateMcpServerModal({
           <div className="grid gap-2">
             <div className="flex items-start justify-between">
               <div>
-                <Label htmlFor="authentication">
-                  Authentication (Optional)
-                </Label>
+                <Label htmlFor="authentication">Authentication</Label>
                 <p className="text-sm text-muted-foreground">
                   Add authentication for the MCP server
                 </p>

@@ -14,6 +14,10 @@ export const ROUTES = {
     `${API_BASE_URL}/mcp-servers/${serverId}`,
   MCP_DELETE_SERVER: (serverId: string) =>
     `${API_BASE_URL}/mcp-servers/${serverId}`,
+  MCP_TOOGGLE_TOOL: (serverId: string, toolId: string) =>
+    `${API_BASE_URL}/mcp-servers/${serverId}/tools/${toolId}/toggle`,
+  MCP_SYNC_TOOLS: (serverId: string) =>
+    `${API_BASE_URL}/mcp-servers/${serverId}/tools/sync`,
 
   // Document Routes
   UPLOAD_DOCUMENTS: `${API_BASE_URL}/admin/docs/upload`,

@@ -3,6 +3,7 @@ const serverAPI = process.env.NEXT_PUBLIC_SERVER_API!;
 const API_BASE_URL = `${serverAPI}/api/v1`;
 
 export const ROUTES = {
+  // AI Tool - MCP Server Routes
   MCP_SERVERS: `${API_BASE_URL}/mcp-servers`,
   MCP_SERVER_BY_SECTOR: (sectorName: string) =>
     `${API_BASE_URL}/mcp-servers/sector/${sectorName}`,
@@ -13,4 +14,12 @@ export const ROUTES = {
     `${API_BASE_URL}/mcp-servers/${serverId}`,
   MCP_DELETE_SERVER: (serverId: string) =>
     `${API_BASE_URL}/mcp-servers/${serverId}`,
+
+  // Document Routes
+  UPLOAD_DOCUMENTS: `${API_BASE_URL}/admin/docs/upload`,
+  DOCUMENTS: `${API_BASE_URL}/admin/docs`,
+  DELETE_DOCUMENT: (documentId: string) =>
+    `${API_BASE_URL}/admin/docs/${documentId}`,
+  EMBEDDINGS: `${API_BASE_URL}/admin/embeddings`,
+  UNEMBEDDINGS: `${API_BASE_URL}/admin/embeddings/unembed`,
 };

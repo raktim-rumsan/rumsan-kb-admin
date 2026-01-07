@@ -116,22 +116,22 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
   });
 }
 
-export function useUpdateMcpServerMutation(onSuccess?: () => void) {
+export function useUpdateMcpServerMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (payload: UpdateMcpServerPayload) => {
+      const { serverId, ...body } = payload;
       const access_token = getAuthToken();
-      const { id: serverId } = payload;
 
       const res = await fetch(`${ROUTES.MCP_UPDATE_SERVER(serverId)}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           access_token: access_token!,
           accept: "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -150,7 +150,6 @@ export function useUpdateMcpServerMutation(onSuccess?: () => void) {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
       queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
       toastUtils.generic.success("MCP server updated");
-      onSuccess?.();
     },
     onError: (err: unknown) => {
       const message =
@@ -201,17 +200,21 @@ export function useToggleMcpToolsMutation() {
     mutationFn: async ({
       serverId,
       toolId,
+      isActive,
     }: {
       serverId: string;
       toolId: string;
+      isActive: boolean;
     }) => {
       const access_token = getAuthToken();
       const res = await fetch(`${ROUTES.MCP_TOOGGLE_TOOL(serverId, toolId)}`, {
         method: "PATCH",
         headers: {
+          "Content-Type": "application/json",
           accept: "application/json",
           access_token: access_token!,
         },
+        body: JSON.stringify({ isActive }),
       });
       const data = await res.json();
       if (!res.ok) {

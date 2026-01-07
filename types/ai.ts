@@ -37,9 +37,10 @@ export interface McpTool {
 }
 
 export interface UpdateMcpServerPayload {
-  id: string;
+  serverId: string;
   name?: string;
   url?: string;
   sectorName?: string;
+  isActive?: boolean;
   authentication?: Record<string, string>;
 }

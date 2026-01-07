@@ -152,7 +152,7 @@ export function CreateMcpServerModal({
     try {
       if (initialData && initialData.id) {
         const updatePayload: UpdateMcpServerPayload = {
-          id: initialData.id,
+          serverId: initialData.id,
           name: data.name.trim(),
           url: data.url.trim(),
           sectorName: data?.sectorName ?? initialData.sectorName,

@@ -111,9 +111,7 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
     onError: (err) => {
       const message =
         err instanceof Error ? err.message : "Failed to create MCP server";
-      toastUtils.generic.error(
-        "Invalid credentials. Please check your authentication details."
-      );
+      toastUtils.generic.error(message);
     },
   });
 }

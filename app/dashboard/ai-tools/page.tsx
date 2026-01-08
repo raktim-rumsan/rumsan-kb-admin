@@ -30,15 +30,14 @@ import type { McpServer } from "@/types/ai";
 
 import ConfirmDelete from "@/components/documents/DeleteModal";
 import { dismissToast, toastUtils } from "@/lib/toast-utils";
-import { CreateMcpServerModal } from "@/components/ai-tools/create-mcp-server-modal";
+import { McpServerAdd } from "@/components/ai-tools/form/mcp-server-add";
+import { McpServerEdit } from "@/components/ai-tools/form/mcp-server-edit";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { McpServerEdit } from "@/components/ai-tools/form/mcp-server-edit";
-import { McpServerAdd } from "@/components/ai-tools/form/mcp-server-add";
 
 export default function AiToolsManagementTab() {
   const { data: servers, isError, isLoading, refetch } = useMcpServersQuery();
@@ -47,7 +46,6 @@ export default function AiToolsManagementTab() {
   const toggleToolMutation = useToggleMcpToolsMutation();
   const syncToolsMutation = useSyncMcpServerToolsMutation();
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [currentDeleteInfo, setCurrentDeleteInfo] = useState<{
     id: string;
@@ -116,13 +114,12 @@ export default function AiToolsManagementTab() {
             Manage MCP tools that the AI can reference.
           </h3>
         </div>
-        <Button
-          className="bg-black hover:bg-gray-800"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add MCP Server
-        </Button>
+        <McpServerAdd>
+          <Button className="bg-black hover:bg-gray-800">
+            <Plus className="w-4 h-4 mr-2" />
+            Add MCP Server
+          </Button>
+        </McpServerAdd>
       </div>
 
       <div className="space-y-3">
@@ -207,10 +204,7 @@ export default function AiToolsManagementTab() {
                     variant="ghost"
                     size="sm"
                     className="cursor-pointer p-2"
-                    onClick={() => {
-                      setEditingId(server.id ?? ""); // fetch by id
-                      setIsCreateModalOpen(true);
-                    }}
+                    onClick={() => setEditingId(server.id ?? "")}
                   >
                     <SquarePen className="w-5 h-5 mr-2" />
                   </Button>
@@ -295,25 +289,13 @@ export default function AiToolsManagementTab() {
         />
       </div>
 
-      {/* Create/Edit MCP Server Modal */}
-      <CreateMcpServerModal
-        key={editingId ?? "create"}
-        isOpen={isCreateModalOpen}
-        initialData={editingId ? editingServerData : null}
-        // prefill data fetched by sector
-        sectorName={editingServerData?.sectorName}
-        // disableSector={Boolean(editingServerData)} // disable dropdown when editing
-        loading={isEditingLoading}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setEditingId(null);
-        }}
-        onSaveSuccess={() => {
-          setIsCreateModalOpen(false);
-          setEditingId(null);
-          refetch?.();
-        }}
-      />
+      {editingId && editingServerData && (
+        <McpServerEdit
+          server={editingServerData}
+          isOpen={Boolean(editingId)}
+          onClose={() => setEditingId(null)}
+        />
+      )}
     </div>
   );
 }

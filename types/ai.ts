@@ -1,4 +1,9 @@
-export type AuthEntry = { key: string; value: string; show?: boolean };
+export type AuthEntry = {
+  key: string;
+  value: string;
+  show?: boolean;
+  isEncrypted?: boolean;
+};
 
 export type FormValues = {
   name: string;
@@ -37,9 +42,10 @@ export interface McpTool {
 }
 
 export interface UpdateMcpServerPayload {
-  id: string;
+  serverId: string;
   name?: string;
   url?: string;
   sectorName?: string;
+  isActive?: boolean;
   authentication?: Record<string, string>;
 }

@@ -10,3 +10,14 @@ export function getAuthToken() {
   const match = document.cookie.match(/sb-[^=]+-auth-token=([^;]+)/);
   return match ? match[1] : null;
 }
+
+export default function truncateMiddleUrl(
+  url: string,
+  maxStart = 12,
+  maxEnd = 8
+) {
+  if (url.length <= maxStart + maxEnd + 3) return url; // short enough, no truncation
+  const start = url.slice(0, maxStart);
+  const end = url.slice(-maxEnd);
+  return `${start}...${end}`;
+}

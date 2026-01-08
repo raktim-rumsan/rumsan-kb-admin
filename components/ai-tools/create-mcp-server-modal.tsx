@@ -152,7 +152,7 @@ export function CreateMcpServerModal({
     try {
       if (initialData && initialData.id) {
         const updatePayload: UpdateMcpServerPayload = {
-          id: initialData.id,
+          serverId: initialData.id,
           name: data.name.trim(),
           url: data.url.trim(),
           sectorName: data?.sectorName ?? initialData.sectorName,
@@ -194,9 +194,9 @@ export function CreateMcpServerModal({
     >
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>{sectorName ? "Edit" : "Add New"} Server</DialogTitle>
+          <DialogTitle>{initialData ? "Edit" : "Add New"} Server</DialogTitle>
           <DialogDescription>
-            {sectorName
+            {initialData
               ? "Update the MCP server details. All fields marked with * are required."
               : "Configure a new MCP server connection. All fields marked with * are required."}
           </DialogDescription>
@@ -220,6 +220,8 @@ export function CreateMcpServerModal({
               id="server-url"
               placeholder={!sectorName ? "https://api.example.com" : ""}
               {...register("url", { required: true })}
+              readOnly={Boolean(initialData?.id)}
+              className={initialData?.id ? "opacity-50" : ""}
             />
           </div>
 
@@ -233,7 +235,6 @@ export function CreateMcpServerModal({
                 <Select
                   value={field.value}
                   onValueChange={(val) => field.onChange(val)}
-                  disabled={disableSector || Boolean(sectorName)}
                 >
                   <SelectTrigger id="sector" className="h-12 w-full">
                     <SelectValue placeholder="Select Sector" />

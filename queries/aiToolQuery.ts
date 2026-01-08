@@ -28,13 +28,13 @@ export function useMcpServersQuery() {
   });
 }
 
-export function useMcpServerBySectorQuery(sectorName?: string) {
+export function useMcpServerByIdQuery(serverId: string) {
   return useQuery({
-    queryKey: ["mcpServer", sectorName],
+    queryKey: ["mcpServer", serverId],
     queryFn: async () => {
-      if (!sectorName) return null;
+      if (!serverId) return null;
       const access_token = getAuthToken();
-      const res = await fetch(`${ROUTES.MCP_SERVER_BY_SECTOR(sectorName)}`, {
+      const res = await fetch(`${ROUTES.MCP_SERVER_BY_ID(serverId)}`, {
         headers: {
           accept: "application/json",
           access_token: access_token!,
@@ -45,7 +45,7 @@ export function useMcpServerBySectorQuery(sectorName?: string) {
         throw new Error(data.message || data.error || `HTTP ${res.status}`);
       return data.data;
     },
-    enabled: !!sectorName,
+    enabled: !!serverId,
     staleTime: 1000 * 60 * 2,
   });
 }
@@ -108,7 +108,7 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
       toastUtils.generic.success("MCP server created");
       onSuccess?.();
     },
-    onError: (err: unknown) => {
+    onError: (err) => {
       const message =
         err instanceof Error ? err.message : "Failed to create MCP server";
       toastUtils.generic.error(message);
@@ -116,22 +116,22 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
   });
 }
 
-export function useUpdateMcpServerMutation(onSuccess?: () => void) {
+export function useUpdateMcpServerMutation() {
   const queryClient = useQueryClient();
 
   return useMutation({
     mutationFn: async (payload: UpdateMcpServerPayload) => {
+      const { serverId, ...body } = payload;
       const access_token = getAuthToken();
-      const { id: serverId } = payload;
 
       const res = await fetch(`${ROUTES.MCP_UPDATE_SERVER(serverId)}`, {
-        method: "PUT",
+        method: "PATCH",
         headers: {
           "Content-Type": "application/json",
           access_token: access_token!,
           accept: "application/json",
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body),
       });
 
       const data = await res.json();
@@ -146,16 +146,15 @@ export function useUpdateMcpServerMutation(onSuccess?: () => void) {
 
       return data.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
       queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
       toastUtils.generic.success("MCP server updated");
-      onSuccess?.();
     },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : "Failed to update MCP server";
-      toastUtils.generic.error(message);
+    onError: () => {
+      toastUtils.generic.error(
+        "Invalid credentials. Please check your authentication details."
+      );
     },
   });
 }
@@ -201,17 +200,21 @@ export function useToggleMcpToolsMutation() {
     mutationFn: async ({
       serverId,
       toolId,
+      payload,
     }: {
       serverId: string;
       toolId: string;
+      payload: { isActive: boolean };
     }) => {
       const access_token = getAuthToken();
       const res = await fetch(`${ROUTES.MCP_TOOGGLE_TOOL(serverId, toolId)}`, {
         method: "PATCH",
         headers: {
+          "Content-Type": "application/json",
           accept: "application/json",
           access_token: access_token!,
         },
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -219,14 +222,47 @@ export function useToggleMcpToolsMutation() {
       }
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
-      toastUtils.generic.success("MCP Tool toggled successfully");
+
+    onMutate: async ({ serverId, toolId, payload }) => {
+      await queryClient.cancelQueries({ queryKey: ["mcpServers"] });
+
+      const previousData = queryClient.getQueryData<McpServer[]>([
+        "mcpServers",
+      ]);
+
+      queryClient.setQueryData<McpServer[]>(["mcpServers"], (old) =>
+        old?.map((server) =>
+          server.id === serverId
+            ? {
+                ...server,
+                mcpTools: server.mcpTools?.map((tool) =>
+                  tool.id === toolId
+                    ? { ...tool, isActive: payload.isActive }
+                    : tool
+                ),
+              }
+            : server
+        )
+      );
+
+      return { previousData };
     },
-    onError: (err: unknown) => {
+
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(["mcpServers"], context.previousData);
+      }
       const message =
         err instanceof Error ? err.message : "Failed to toggle MCP tool";
       toastUtils.generic.error(message);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+    },
+
+    onSuccess: () => {
+      toastUtils.generic.success("MCP Tool toggled successfully");
     },
   });
 }

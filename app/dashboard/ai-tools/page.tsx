@@ -21,36 +21,44 @@ import {
 import {
   useMCPDeleteMutation,
   useMcpServersQuery,
-  useToggleMcpServerMutation,
-  useMcpServerBySectorQuery,
+  useMcpServerByIdQuery,
   useToggleMcpToolsMutation,
   useSyncMcpServerToolsMutation,
+  useUpdateMcpServerMutation,
 } from "@/queries/aiToolQuery";
 import type { McpServer } from "@/types/ai";
 
 import ConfirmDelete from "@/components/documents/DeleteModal";
 import { dismissToast, toastUtils } from "@/lib/toast-utils";
-import { CreateMcpServerModal } from "@/components/ai-tools/create-mcp-server-modal";
+import { McpServerAdd } from "@/components/ai-tools/form/mcp-server-add";
+import { McpServerEdit } from "@/components/ai-tools/form/mcp-server-edit";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import truncateMiddleUrl from "@/lib/utils";
 
 export default function AiToolsManagementTab() {
   const { data: servers, isError, isLoading, refetch } = useMcpServersQuery();
   const deleteServerMutation = useMCPDeleteMutation();
-  const toggleServerMutation = useToggleMcpServerMutation();
+  const toggleServerMutation = useUpdateMcpServerMutation();
   const toggleToolMutation = useToggleMcpToolsMutation();
   const syncToolsMutation = useSyncMcpServerToolsMutation();
 
-  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [currentDeleteInfo, setCurrentDeleteInfo] = useState<{
     id: string;
     name: string;
   } | null>(null);
-  const [editingSector, setEditingSector] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
+  const [syncingServerId, setSyncingServerId] = useState<string | null>(null);
 
   // Fetch server details by sector when editing
   const { data: editingServerData, isLoading: isEditingLoading } =
-    useMcpServerBySectorQuery(editingSector || "");
+    useMcpServerByIdQuery(editingId || "");
 
   const handleDelete = () => {
     if (!currentDeleteInfo) return;
@@ -71,16 +79,31 @@ export default function AiToolsManagementTab() {
     });
   };
 
-  const handleToggleServer = (serverId: string) => {
-    toggleServerMutation.mutate(serverId);
+  const handleToggleServer = (serverId: string, newValue: boolean) => {
+    toggleServerMutation.mutate({ serverId: serverId, isActive: newValue });
   };
 
-  const handleToggleTool = (serverId: string, toolId: string) => {
-    toggleToolMutation.mutate({ serverId, toolId });
+  const handleToggleTool = (
+    serverId: string,
+    toolId: string,
+    newValue: boolean
+  ) => {
+    toggleToolMutation.mutate({
+      serverId,
+      toolId,
+      payload: { isActive: newValue },
+    });
   };
 
-  const handleSync = (serverId: string) => {
-    syncToolsMutation.mutate(serverId);
+  const handleSync = async (serverId: string) => {
+    setExpandedServerId(serverId);
+    setSyncingServerId(serverId);
+
+    await syncToolsMutation.mutateAsync(serverId, {
+      onSuccess: () => {
+        setSyncingServerId(null);
+      },
+    });
   };
 
   const humanizeToolName = (name: string): string =>
@@ -104,14 +127,12 @@ export default function AiToolsManagementTab() {
             Manage MCP tools that the AI can reference.
           </h3>
         </div>
-
-        <Button
-          className="bg-black hover:bg-gray-800"
-          onClick={() => setIsCreateModalOpen(true)}
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          Add MCP Server
-        </Button>
+        <McpServerAdd>
+          <Button className="bg-black hover:bg-gray-800">
+            <Plus className="w-4 h-4 mr-2" />
+            Add MCP Server
+          </Button>
+        </McpServerAdd>
       </div>
 
       <div className="space-y-3">
@@ -136,10 +157,10 @@ export default function AiToolsManagementTab() {
                         expandedServerId === server.id ? null : server.id
                       )
                     }
-                    className="transform transition-transform"
+                    className="cursor-pointer transform transition-transform"
                   >
                     <ChevronDown
-                      className={`h-5 w-5 text-muted-foreground ${
+                      className={`h-5 w-5 text-muted-foreground  ${
                         expandedServerId === server.id ? "rotate-180" : ""
                       }`}
                     />
@@ -159,49 +180,67 @@ export default function AiToolsManagementTab() {
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      <span>{server.url}</span>
+                    <div className="text-sm text-muted-foreground ">
+                      <span title={server.url}>
+                        {truncateMiddleUrl(server.url)}
+                      </span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="p-1"
+                        className="cursor-pointer p-1"
                         onClick={() => handleCopy(server.url)}
                       >
-                        <Copy className="w-4 h-4" />
+                        <Copy className="w-4 h-4 " />
                       </Button>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="p-2"
-                    onClick={() => handleSync(server.id)}
-                  >
-                    <RefreshCcw className="w-5 h-5 mr-2" />
-                  </Button>
+                  <TooltipProvider>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="cursor-pointer p-2"
+                          onClick={() => handleSync(server.id)}
+                          disabled={syncingServerId === server.id}
+                        >
+                          <RefreshCcw
+                            className={`w-5 h-5 mr-2 ${
+                              syncingServerId === server.id
+                                ? "animate-spin"
+                                : ""
+                            }`}
+                          />
+                        </Button>
+                      </TooltipTrigger>
+
+                      <TooltipContent>
+                        <p>Sync MCP tools</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  </TooltipProvider>
 
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="p-2"
-                    onClick={() => {
-                      setEditingSector(server.sectorName ?? ""); // fetch by sector
-                      setIsCreateModalOpen(true);
-                    }}
+                    className="cursor-pointer p-2"
+                    onClick={() => setEditingId(server.id ?? "")}
                   >
                     <SquarePen className="w-5 h-5 mr-2" />
                   </Button>
                   <Switch
                     checked={server.isActive}
                     disabled={toggleServerMutation.isPending}
-                    onCheckedChange={() => handleToggleServer(server.id)}
+                    onCheckedChange={(newValue) =>
+                      handleToggleServer(server.id, newValue)
+                    }
                   />
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-red-600 hover:text-red-700 p-2"
+                    className="cursor-pointer text-red-600 hover:text-red-700 p-2"
                     onClick={() => {
                       setCurrentDeleteInfo({
                         id: server.id,
@@ -237,15 +276,19 @@ export default function AiToolsManagementTab() {
                               {humanizeToolName(tool.name)}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {tool.description}
+                              {tool.description
+                                ?.replace(/Args:\s*/i, "")
+                                .replace(/Returns:\s*/i, "")
+                                .replace(/\[Note:[^\]]*\]/i, "")
+                                .trim()}
                             </div>
                           </div>
 
                           <Switch
                             checked={tool.isActive}
                             disabled={toggleToolMutation.isPending}
-                            onCheckedChange={() =>
-                              handleToggleTool(server.id, tool.id)
+                            onCheckedChange={(newValue) =>
+                              handleToggleTool(server.id, tool.id, newValue)
                             }
                           />
                         </div>
@@ -268,24 +311,13 @@ export default function AiToolsManagementTab() {
         />
       </div>
 
-      {/* Create/Edit MCP Server Modal */}
-      <CreateMcpServerModal
-        key={editingServerData?.id ?? "create"}
-        isOpen={isCreateModalOpen}
-        initialData={editingServerData} // prefill data fetched by sector
-        sectorName={editingServerData?.sectorName}
-        disableSector={Boolean(editingServerData)} // disable dropdown when editing
-        loading={isEditingLoading}
-        onClose={() => {
-          setIsCreateModalOpen(false);
-          setEditingSector(null);
-        }}
-        onSaveSuccess={() => {
-          setIsCreateModalOpen(false);
-          setEditingSector(null);
-          refetch?.();
-        }}
-      />
+      {editingId && editingServerData && (
+        <McpServerEdit
+          server={editingServerData}
+          isOpen={Boolean(editingId)}
+          onClose={() => setEditingId(null)}
+        />
+      )}
     </div>
   );
 }

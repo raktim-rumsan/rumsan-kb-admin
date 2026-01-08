@@ -146,14 +146,12 @@ export function useUpdateMcpServerMutation() {
 
       return data.data;
     },
-    onSuccess: (data) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
       queryClient.invalidateQueries({ queryKey: ["mcpServer"] });
       toastUtils.generic.success("MCP server updated");
     },
-    onError: (err: unknown) => {
-      const message =
-        err instanceof Error ? err.message : "Failed to update MCP server";
+    onError: () => {
       toastUtils.generic.error(
         "Invalid credentials. Please check your authentication details."
       );

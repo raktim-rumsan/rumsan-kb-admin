@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Eye, EyeOff, Plus, Trash } from "lucide-react";
 import type { FormValues, AuthEntry } from "@/types/ai";
+import truncateMiddleUrl from "@/lib/utils";
 import { SECTORS } from "@/constants/sector";
 import { toastUtils } from "@/lib/toast-utils";
 
@@ -90,13 +91,20 @@ export function CommonMcpServerForm({
       {/* URL */}
       <div className="grid gap-2">
         <Label htmlFor="server-url">URL *</Label>
-        <Input
-          id="server-url"
-          {...register("url", { required: true })}
-          readOnly={Boolean(isEdit)}
-          className={isEdit ? "opacity-50" : ""}
-          placeholder="https://mcp.example.com"
-        />
+        <div className="relative">
+          <Input
+            id="server-url"
+            {...register("url", { required: true })}
+            readOnly={Boolean(isEdit)}
+            className={isEdit ? "opacity-50 text-transparent" : ""}
+            placeholder="https://mcp.example.com"
+          />
+          {isEdit && defaultValues?.url && (
+            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-muted-foreground">
+              {truncateMiddleUrl(defaultValues.url)}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Sector */}
@@ -192,11 +200,11 @@ export function CommonMcpServerForm({
                       {...register(`authentication.${idx}.value` as const, {
                         required: true,
                       })}
-                      className="pr-10"
+                      className="pr-18"
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setValue(`authentication.${idx}.value`, newValue);
-                        setValue(`authentication.${idx}.isEncrypted`, false); // 🔑 mark as plain text
+                        setValue(`authentication.${idx}.isEncrypted`, false); //  mark as plain text
                       }}
                     />
                     <Button

@@ -7,12 +7,10 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { toastUtils } from "@/lib/toast-utils";
 import { useUpdateMcpServerMutation } from "@/queries/aiToolQuery";
 import type { McpServer } from "@/types/ai";
 import { CommonMcpServerForm } from "./common-mcp-server-form";
 import { encryptWithPublicKey } from "@/lib/encrypt";
-import truncateMiddleUrl from "@/lib/utils";
 
 interface EditProps {
   server: McpServer;
@@ -39,18 +37,16 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
         : await encryptWithPublicKey(publicKeyPem!, value);
     }
 
-    try {
-      await updateMutation.mutateAsync({
+    await updateMutation.mutateAsync(
+      {
         serverId: server.id,
         ...data,
-        authentication, // 🔐 encrypted-only payload
-      });
-
-      onClose();
-      toastUtils.generic.success("Server updated successfully");
-    } catch (err) {
-      toastUtils.generic.error("Failed to update server");
-    }
+        authentication, //encrypted-only payload
+      },
+      {
+        onSuccess: () => onClose(),
+      }
+    );
   };
 
   return (
@@ -67,7 +63,7 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
           onCancel={onClose}
           defaultValues={{
             name: server.name,
-            url: truncateMiddleUrl(server.url),
+            url: server.url,
             sectorName: server.sectorName,
 
             authentication: server.authentication
@@ -75,7 +71,7 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
                   key,
                   value: String(value),
                   show: false,
-                  isEncrypted: true, // ✅ UI-only flag
+                  isEncrypted: true,
                 }))
               : [],
           }}

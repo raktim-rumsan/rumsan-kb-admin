@@ -28,13 +28,13 @@ export function useMcpServersQuery() {
   });
 }
 
-export function useMcpServerBySectorQuery(sectorName?: string) {
+export function useMcpServerByIdQuery(serverId: string) {
   return useQuery({
-    queryKey: ["mcpServer", sectorName],
+    queryKey: ["mcpServer", serverId],
     queryFn: async () => {
-      if (!sectorName) return null;
+      if (!serverId) return null;
       const access_token = getAuthToken();
-      const res = await fetch(`${ROUTES.MCP_SERVER_BY_SECTOR(sectorName)}`, {
+      const res = await fetch(`${ROUTES.MCP_SERVER_BY_ID(serverId)}`, {
         headers: {
           accept: "application/json",
           access_token: access_token!,
@@ -45,7 +45,7 @@ export function useMcpServerBySectorQuery(sectorName?: string) {
         throw new Error(data.message || data.error || `HTTP ${res.status}`);
       return data.data;
     },
-    enabled: !!sectorName,
+    enabled: !!serverId,
     staleTime: 1000 * 60 * 2,
   });
 }
@@ -108,10 +108,12 @@ export function useCreateMcpServerMutation(onSuccess?: () => void) {
       toastUtils.generic.success("MCP server created");
       onSuccess?.();
     },
-    onError: (err: unknown) => {
+    onError: (err) => {
       const message =
         err instanceof Error ? err.message : "Failed to create MCP server";
-      toastUtils.generic.error(message);
+      toastUtils.generic.error(
+        "Invalid credentials. Please check your authentication details."
+      );
     },
   });
 }
@@ -154,7 +156,9 @@ export function useUpdateMcpServerMutation() {
     onError: (err: unknown) => {
       const message =
         err instanceof Error ? err.message : "Failed to update MCP server";
-      toastUtils.generic.error(message);
+      toastUtils.generic.error(
+        "Invalid credentials. Please check your authentication details."
+      );
     },
   });
 }

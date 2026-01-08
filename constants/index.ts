@@ -5,8 +5,8 @@ const API_BASE_URL = `${serverAPI}/api/v1`;
 export const ROUTES = {
   // AI Tool - MCP Server Routes
   MCP_SERVERS: `${API_BASE_URL}/mcp-servers`,
-  MCP_SERVER_BY_SECTOR: (sectorName: string) =>
-    `${API_BASE_URL}/mcp-servers/sectors/${sectorName}`,
+  MCP_SERVER_BY_ID: (serverId: string) =>
+    `${API_BASE_URL}/mcp-servers/${serverId}`,
   MCP_TOOGGLE_SERVER: (serverId: string) =>
     `${API_BASE_URL}/mcp-servers/${serverId}`,
   MCP_CREATE_SERVER: `${API_BASE_URL}/mcp-servers`,

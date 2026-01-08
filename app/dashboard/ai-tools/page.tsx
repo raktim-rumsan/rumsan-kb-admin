@@ -21,7 +21,7 @@ import {
 import {
   useMCPDeleteMutation,
   useMcpServersQuery,
-  useMcpServerBySectorQuery,
+  useMcpServerByIdQuery,
   useToggleMcpToolsMutation,
   useSyncMcpServerToolsMutation,
   useUpdateMcpServerMutation,
@@ -37,6 +37,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { McpServerEdit } from "@/components/ai-tools/form/mcp-server-edit";
+import { McpServerAdd } from "@/components/ai-tools/form/mcp-server-add";
 
 export default function AiToolsManagementTab() {
   const { data: servers, isError, isLoading, refetch } = useMcpServersQuery();
@@ -51,12 +53,12 @@ export default function AiToolsManagementTab() {
     id: string;
     name: string;
   } | null>(null);
-  const [editingSector, setEditingSector] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
 
   // Fetch server details by sector when editing
   const { data: editingServerData, isLoading: isEditingLoading } =
-    useMcpServerBySectorQuery(editingSector || "");
+    useMcpServerByIdQuery(editingId || "");
 
   const handleDelete = () => {
     if (!currentDeleteInfo) return;
@@ -114,7 +116,6 @@ export default function AiToolsManagementTab() {
             Manage MCP tools that the AI can reference.
           </h3>
         </div>
-
         <Button
           className="bg-black hover:bg-gray-800"
           onClick={() => setIsCreateModalOpen(true)}
@@ -207,7 +208,7 @@ export default function AiToolsManagementTab() {
                     size="sm"
                     className="cursor-pointer p-2"
                     onClick={() => {
-                      setEditingSector(server.sectorName ?? ""); // fetch by sector
+                      setEditingId(server.id ?? ""); // fetch by id
                       setIsCreateModalOpen(true);
                     }}
                   >
@@ -259,7 +260,11 @@ export default function AiToolsManagementTab() {
                               {humanizeToolName(tool.name)}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              {tool.description}
+                              {tool.description
+                                ?.replace(/Args:\s*/i, "")
+                                .replace(/Returns:\s*/i, "")
+                                .replace(/\[Note:[^\]]*\]/i, "")
+                                .trim()}
                             </div>
                           </div>
 
@@ -292,19 +297,20 @@ export default function AiToolsManagementTab() {
 
       {/* Create/Edit MCP Server Modal */}
       <CreateMcpServerModal
-        key={editingServerData?.id ?? "create"}
+        key={editingId ?? "create"}
         isOpen={isCreateModalOpen}
-        initialData={editingServerData} // prefill data fetched by sector
+        initialData={editingId ? editingServerData : null}
+        // prefill data fetched by sector
         sectorName={editingServerData?.sectorName}
-        disableSector={Boolean(editingServerData)} // disable dropdown when editing
+        // disableSector={Boolean(editingServerData)} // disable dropdown when editing
         loading={isEditingLoading}
         onClose={() => {
           setIsCreateModalOpen(false);
-          setEditingSector(null);
+          setEditingId(null);
         }}
         onSaveSuccess={() => {
           setIsCreateModalOpen(false);
-          setEditingSector(null);
+          setEditingId(null);
           refetch?.();
         }}
       />

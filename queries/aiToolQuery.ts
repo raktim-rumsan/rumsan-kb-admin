@@ -202,11 +202,11 @@ export function useToggleMcpToolsMutation() {
     mutationFn: async ({
       serverId,
       toolId,
-      isActive,
+      payload,
     }: {
       serverId: string;
       toolId: string;
-      isActive: boolean;
+      payload: { isActive: boolean };
     }) => {
       const access_token = getAuthToken();
       const res = await fetch(`${ROUTES.MCP_TOOGGLE_TOOL(serverId, toolId)}`, {
@@ -216,7 +216,7 @@ export function useToggleMcpToolsMutation() {
           accept: "application/json",
           access_token: access_token!,
         },
-        body: JSON.stringify({ isActive }),
+        body: JSON.stringify(payload),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -224,14 +224,47 @@ export function useToggleMcpToolsMutation() {
       }
       return data;
     },
-    onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
-      toastUtils.generic.success("MCP Tool toggled successfully");
+
+    onMutate: async ({ serverId, toolId, payload }) => {
+      await queryClient.cancelQueries({ queryKey: ["mcpServers"] });
+
+      const previousData = queryClient.getQueryData<McpServer[]>([
+        "mcpServers",
+      ]);
+
+      queryClient.setQueryData<McpServer[]>(["mcpServers"], (old) =>
+        old?.map((server) =>
+          server.id === serverId
+            ? {
+                ...server,
+                mcpTools: server.mcpTools?.map((tool) =>
+                  tool.id === toolId
+                    ? { ...tool, isActive: payload.isActive }
+                    : tool
+                ),
+              }
+            : server
+        )
+      );
+
+      return { previousData };
     },
-    onError: (err: unknown) => {
+
+    onError: (err, variables, context) => {
+      if (context?.previousData) {
+        queryClient.setQueryData(["mcpServers"], context.previousData);
+      }
       const message =
         err instanceof Error ? err.message : "Failed to toggle MCP tool";
       toastUtils.generic.error(message);
+    },
+
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ["mcpServers"] });
+    },
+
+    onSuccess: () => {
+      toastUtils.generic.success("MCP Tool toggled successfully");
     },
   });
 }

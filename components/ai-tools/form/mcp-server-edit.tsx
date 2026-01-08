@@ -11,32 +11,46 @@ import { toastUtils } from "@/lib/toast-utils";
 import { useUpdateMcpServerMutation } from "@/queries/aiToolQuery";
 import type { McpServer } from "@/types/ai";
 import { CommonMcpServerForm } from "./common-mcp-server-form";
+import { encryptWithPublicKey } from "@/lib/encrypt";
+import truncateMiddleUrl from "@/lib/utils";
 
-interface Props {
+interface EditProps {
   server: McpServer;
   isOpen: boolean;
   onClose: () => void;
 }
 
-export function McpServerEdit({ server, isOpen, onClose }: Props) {
+export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
   const updateMutation = useUpdateMcpServerMutation();
 
   const onSubmit = async (data: any) => {
-    const authentication = (data.authentication ?? []).reduce(
-      (acc: Record<string, string>, entry: any) => {
-        if (entry && entry.key?.trim())
-          acc[entry.key.trim()] = (entry.value ?? "").toString().trim();
-        return acc;
-      },
-      {}
-    );
+    const publicKeyPem = process.env.NEXT_PUBLIC_ENCRYPT_KEY;
 
-    await updateMutation.mutateAsync({
-      serverId: server.id,
-      ...data,
-      authentication,
-    });
-    onClose();
+    const authentication: Record<string, string> = {};
+
+    for (const entry of data.authentication ?? []) {
+      if (!entry?.key?.trim()) continue;
+
+      const key = entry.key.trim();
+      const value = String(entry.value ?? "").trim();
+
+      authentication[key] = entry.isEncrypted
+        ? value
+        : await encryptWithPublicKey(publicKeyPem!, value);
+    }
+
+    try {
+      await updateMutation.mutateAsync({
+        serverId: server.id,
+        ...data,
+        authentication, // 🔐 encrypted-only payload
+      });
+
+      onClose();
+      toastUtils.generic.success("Server updated successfully");
+    } catch (err) {
+      toastUtils.generic.error("Failed to update server");
+    }
   };
 
   return (
@@ -46,28 +60,25 @@ export function McpServerEdit({ server, isOpen, onClose }: Props) {
           <DialogTitle>Edit MCP Server</DialogTitle>
           <DialogDescription>Update server details</DialogDescription>
         </DialogHeader>
+
         <CommonMcpServerForm
           onSubmit={onSubmit}
+          isEdit
+          onCancel={onClose}
           defaultValues={{
             name: server.name,
-            url: server.url,
+            url: truncateMiddleUrl(server.url),
             sectorName: server.sectorName,
-            authentication: Array.isArray(server.authentication)
-              ? server.authentication.map((e: any) => ({
-                  key: e?.key ?? String(e?.key ?? ""),
-                  value: String(e?.value ?? ""),
+
+            authentication: server.authentication
+              ? Object.entries(server.authentication).map(([key, value]) => ({
+                  key,
+                  value: String(value),
                   show: false,
-                }))
-              : server.authentication
-              ? Object.entries(server.authentication).map(([k, v]) => ({
-                  key: k,
-                  value: String(v),
-                  show: false,
+                  isEncrypted: true, // ✅ UI-only flag
                 }))
               : [],
           }}
-          isEdit
-          onCancel={onClose}
         />
       </DialogContent>
     </Dialog>

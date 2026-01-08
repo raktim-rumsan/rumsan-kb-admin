@@ -65,6 +65,7 @@ export function CommonMcpServerForm({
         key: k,
         value: String(v ?? ""),
         show: false,
+        isEncrypted: true,
       }));
       setValue("authentication", arr);
       setIsJsonMode(false);
@@ -158,7 +159,14 @@ export function CommonMcpServerForm({
                 variant="outline"
                 size="sm"
                 type="button"
-                onClick={() => append({ key: "", value: "", show: false })}
+                onClick={() =>
+                  append({
+                    key: "",
+                    value: "",
+                    show: false,
+                    isEncrypted: false,
+                  })
+                }
               >
                 <Plus className="w-4 h-4 mr-2" /> Add
               </Button>
@@ -185,6 +193,11 @@ export function CommonMcpServerForm({
                         required: true,
                       })}
                       className="pr-10"
+                      onChange={(e) => {
+                        const newValue = e.target.value;
+                        setValue(`authentication.${idx}.value`, newValue);
+                        setValue(`authentication.${idx}.isEncrypted`, false); // 🔑 mark as plain text
+                      }}
                     />
                     <Button
                       type="button"

@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import truncateMiddleUrl from "@/lib/utils";
 
 export default function AiToolsManagementTab() {
   const { data: servers, isError, isLoading, refetch } = useMcpServersQuery();
@@ -53,6 +54,7 @@ export default function AiToolsManagementTab() {
   } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [expandedServerId, setExpandedServerId] = useState<string | null>(null);
+  const [syncingServerId, setSyncingServerId] = useState<string | null>(null);
 
   // Fetch server details by sector when editing
   const { data: editingServerData, isLoading: isEditingLoading } =
@@ -86,11 +88,22 @@ export default function AiToolsManagementTab() {
     toolId: string,
     newValue: boolean
   ) => {
-    toggleToolMutation.mutate({ serverId, toolId, isActive: newValue });
+    toggleToolMutation.mutate({
+      serverId,
+      toolId,
+      payload: { isActive: newValue },
+    });
   };
 
-  const handleSync = (serverId: string) => {
-    syncToolsMutation.mutate(serverId);
+  const handleSync = async (serverId: string) => {
+    setExpandedServerId(serverId);
+    setSyncingServerId(serverId);
+
+    await syncToolsMutation.mutateAsync(serverId, {
+      onSuccess: () => {
+        setSyncingServerId(null);
+      },
+    });
   };
 
   const humanizeToolName = (name: string): string =>
@@ -168,7 +181,9 @@ export default function AiToolsManagementTab() {
                       )}
                     </div>
                     <div className="text-sm text-muted-foreground ">
-                      <span>{server.url}</span>
+                      <span title={server.url}>
+                        {truncateMiddleUrl(server.url)}
+                      </span>
                       <Button
                         variant="ghost"
                         size="sm"
@@ -189,8 +204,15 @@ export default function AiToolsManagementTab() {
                           size="sm"
                           className="cursor-pointer p-2"
                           onClick={() => handleSync(server.id)}
+                          disabled={syncingServerId === server.id}
                         >
-                          <RefreshCcw className="w-5 h-5 mr-2" />
+                          <RefreshCcw
+                            className={`w-5 h-5 mr-2 ${
+                              syncingServerId === server.id
+                                ? "animate-spin"
+                                : ""
+                            }`}
+                          />
                         </Button>
                       </TooltipTrigger>
 

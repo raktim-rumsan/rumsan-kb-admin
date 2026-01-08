@@ -9,23 +9,28 @@ import {
   DialogDescription,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { toastUtils } from "@/lib/toast-utils";
 import { useCreateMcpServerMutation } from "@/queries/aiToolQuery";
 import { CommonMcpServerForm } from "./common-mcp-server-form";
+import { encryptWithPublicKey } from "@/lib/encrypt";
 
 export function McpServerAdd({ children }: { children: ReactNode }) {
   const [isOpen, setOpen] = useState(false);
   const createMutation = useCreateMcpServerMutation();
 
   const onSubmit = async (data: any) => {
-    const authentication = (data.authentication ?? []).reduce(
-      (acc: Record<string, string>, entry: any) => {
-        if (entry && entry.key?.trim())
-          acc[entry.key.trim()] = (entry.value ?? "").toString().trim();
-        return acc;
-      },
-      {}
-    );
+    const publicKeyPem = process.env.NEXT_PUBLIC_ENCRYPT_KEY;
+
+    // Encrypt each auth value
+    const authentication: Record<string, string> = {};
+    for (const entry of data.authentication ?? []) {
+      if (entry?.key?.trim()) {
+        const encryptedValue = await encryptWithPublicKey(
+          publicKeyPem!,
+          (entry.value ?? "").toString().trim()
+        );
+        authentication[entry.key.trim()] = encryptedValue;
+      }
+    }
 
     const payload = { ...data, authentication };
 

@@ -37,7 +37,7 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
         : await encryptWithPublicKey(publicKeyPem!, value);
     }
 
-    await updateMutation.mutateAsync(
+    updateMutation.mutate(
       {
         serverId: server.id,
         ...data,

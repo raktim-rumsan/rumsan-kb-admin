@@ -27,7 +27,6 @@ import ConfirmDelete from "@/components/documents/DeleteModal";
 
 interface Document {
   id: string;
-  orgId: string;
   fileName: string;
   industry: string;
   url: string;
@@ -37,9 +36,11 @@ interface Document {
 
 export default function DocumentsPage() {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-  const [trainingDocumentId, setTrainingDocumentId] = useState<string | null>(null);
+  const [trainingDocumentId, setTrainingDocumentId] = useState<string | null>(
+    null
+  );
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
- const [currentDeleteInfo, setCurrentDeleteInfo] = useState<{
+  const [currentDeleteInfo, setCurrentDeleteInfo] = useState<{
     id: string;
     fileName: string;
   } | null>(null);
@@ -49,7 +50,8 @@ export default function DocumentsPage() {
   const setDocuments = useSetDocuments();
 
   // Prefer store documents if available, otherwise use query data
-  const documents = documentsFromStore.length > 0 ? documentsFromStore : data?.data || [];
+  const documents =
+    documentsFromStore.length > 0 ? documentsFromStore : data?.data || [];
   const currentDocumentCount = documents.length;
 
   // Sync query data with store when it changes
@@ -67,12 +69,18 @@ export default function DocumentsPage() {
   }, [data, setDocuments]);
 
   const embeddingMutation = useEmbeddingMutation(() => {
-    toastUtils.generic.success("Training completed", "Document has been successfully trained.");
+    toastUtils.generic.success(
+      "Training completed",
+      "Document has been successfully trained."
+    );
     // Note: The store will be updated when the query refetches
   });
 
   const unembeddingMutation = useUnembeddingMutation(() => {
-    toastUtils.generic.success("Unembed completed", "Document embeddings removed.");
+    toastUtils.generic.success(
+      "Unembed completed",
+      "Document embeddings removed."
+    );
   });
 
   // Toggle handler: when switched ON call embeddings API; when OFF call unembedding API
@@ -86,9 +94,11 @@ export default function DocumentsPage() {
           dismissToast(loadingToastId);
           setTrainingDocumentId(null);
 
-          const backendMessage = error instanceof Error ? error.message : undefined;
+          const backendMessage =
+            error instanceof Error ? error.message : undefined;
           const errorTitle = "Training failed";
-          const errorMessage = backendMessage ?? `Failed to train "${fileName || id}."`;
+          const errorMessage =
+            backendMessage ?? `Failed to train "${fileName || id}."`;
           toastUtils.generic.error(errorTitle, errorMessage);
         },
         onSuccess: () => {
@@ -97,7 +107,9 @@ export default function DocumentsPage() {
         },
       });
     } else {
-      const loadingToastId = toastUtils.generic.loading(`Removing document from knowledge base...`);
+      const loadingToastId = toastUtils.generic.loading(
+        `Removing document from knowledge base...`
+      );
       setTrainingDocumentId(id);
 
       unembeddingMutation.mutate(id, {
@@ -105,10 +117,12 @@ export default function DocumentsPage() {
           dismissToast(loadingToastId);
           setTrainingDocumentId(null);
 
-          const backendMessage = error instanceof Error ? error.message : undefined;
+          const backendMessage =
+            error instanceof Error ? error.message : undefined;
           const errorTitle = "Unembed failed";
           const errorMessage =
-            backendMessage ?? `Failed to remove embeddings for "${fileName || id}."`;
+            backendMessage ??
+            `Failed to remove embeddings for "${fileName || id}."`;
           toastUtils.generic.error(errorTitle, errorMessage);
         },
         onSuccess: () => {
@@ -124,7 +138,7 @@ export default function DocumentsPage() {
     // Note: The store will be updated when the query refetches
   });
 
-   const handleDelete = async () => {
+  const handleDelete = async () => {
     if (!currentDeleteInfo) return;
     const loadingToastId = toastUtils.generic.loading("Deleting document...");
 
@@ -156,7 +170,10 @@ export default function DocumentsPage() {
         <div className="flex items-center gap-3">
           <h1 className="text-2xl font-semibold">My Resources</h1>
         </div>
-        <Button className="bg-black hover:bg-gray-800" onClick={() => setIsUploadModalOpen(true)}>
+        <Button
+          className="bg-black hover:bg-gray-800"
+          onClick={() => setIsUploadModalOpen(true)}
+        >
           <Upload className="w-4 h-4 mr-2" />
           Upload File
         </Button>
@@ -187,10 +204,12 @@ export default function DocumentsPage() {
                             {doc.fileName.replaceAll("_", " ")}
                           </div>
                         </TableCell>
-                        <TableCell>{doc?.industry?.toLocaleUpperCase()}</TableCell>
+                        <TableCell>
+                          {doc?.industry?.toLocaleUpperCase()}
+                        </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                           <Button
+                            <Button
                               variant="outline"
                               size="sm"
                               onClick={() => {
@@ -208,7 +227,11 @@ export default function DocumentsPage() {
                             <Switch
                               checked={doc.status !== "PENDING"}
                               onCheckedChange={(checked) =>
-                                handleToggle(doc.id, Boolean(checked), doc.fileName)
+                                handleToggle(
+                                  doc.id,
+                                  Boolean(checked),
+                                  doc.fileName
+                                )
                               }
                               disabled={trainingDocumentId === doc.id}
                               aria-label={`Toggle document ${doc.fileName}`}
@@ -225,7 +248,9 @@ export default function DocumentsPage() {
                     Failed to load documents: {error.message}
                   </div>
                 ) : documents.length === 0 && !isLoading ? (
-                  <div className="text-center py-8 text-gray-500">No documents uploaded yet</div>
+                  <div className="text-center py-8 text-gray-500">
+                    No documents uploaded yet
+                  </div>
                 ) : null}
               </>
             )}
@@ -243,7 +268,7 @@ export default function DocumentsPage() {
         }}
         currentDocumentCount={currentDocumentCount}
       />
-       <ConfirmDelete
+      <ConfirmDelete
         isOpen={openDeleteModal}
         setIsOpen={setOpenDeleteModal}
         onConfirm={handleDelete}

@@ -23,7 +23,6 @@ export const UserSchema = z.object({
 // Documents Schemas
 export const DocumentSchema = z.object({
   id: z.string(),
-  orgId: z.string().nullable(),
   industry: z.string(),
   fileName: z.string(),
   url: z.string(),
@@ -42,4 +41,3 @@ export type User = z.infer<typeof UserSchema>;
 
 export type Document = z.infer<typeof DocumentSchema>;
 export type DocumentsResponse = z.infer<typeof DocumentsResponseSchema>;
-

@@ -26,4 +26,8 @@ export const ROUTES = {
     `${API_BASE_URL}/admin/docs/${documentId}`,
   EMBEDDINGS: `${API_BASE_URL}/admin/embeddings`,
   UNEMBEDDINGS: `${API_BASE_URL}/admin/embeddings/unembed`,
+
+  //Prompts Routes
+  PROMPTS: `${API_BASE_URL}/admin/settings`,
+  UPDATE_PROMPTS: `${API_BASE_URL}/admin/settings`,
 };

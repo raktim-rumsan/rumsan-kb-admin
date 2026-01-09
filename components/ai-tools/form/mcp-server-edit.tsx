@@ -11,6 +11,7 @@ import { useUpdateMcpServerMutation } from "@/queries/aiToolQuery";
 import type { McpServer } from "@/types/ai";
 import { CommonMcpServerForm } from "./common-mcp-server-form";
 import { encryptWithPublicKey } from "@/lib/encrypt";
+import { toastUtils } from "@/lib/toast-utils";
 
 interface EditProps {
   server: McpServer;
@@ -32,12 +33,25 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
       const key = entry.key.trim();
       const value = String(entry.value ?? "").trim();
 
-      authentication[key] = entry.isEncrypted
-        ? value
-        : await encryptWithPublicKey(publicKeyPem!, value);
+      if (entry.isEncrypted) {
+        authentication[key] = value;
+      } else {
+        try {
+          authentication[key] = await encryptWithPublicKey(
+            publicKeyPem!,
+            value
+          );
+        } catch (error) {
+          // Only show encryption errors
+          toastUtils.generic.error(
+            `Failed to encrypt "${key}". Please check the value.`
+          );
+          return;
+        }
+      }
     }
 
-    await updateMutation.mutateAsync(
+    updateMutation.mutate(
       {
         serverId: server.id,
         ...data,

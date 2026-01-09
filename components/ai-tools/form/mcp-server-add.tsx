@@ -34,7 +34,7 @@ export function McpServerAdd({ children }: { children: ReactNode }) {
 
     const payload = { ...data, authentication };
 
-    await createMutation.mutateAsync(payload, {
+    createMutation.mutate(payload, {
       onSuccess: () => setOpen(false),
     });
   };

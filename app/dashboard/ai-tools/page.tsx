@@ -180,17 +180,17 @@ export default function AiToolsManagementTab() {
                         </span>
                       )}
                     </div>
-                    <div className="text-sm text-muted-foreground ">
+                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span title={server.url}>
                         {truncateMiddleUrl(server.url)}
                       </span>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="cursor-pointer p-1"
+                        className="h-6 w-6 p-0 cursor-pointer"
                         onClick={() => handleCopy(server.url)}
                       >
-                        <Copy className="w-4 h-4 " />
+                        <Copy className="w-3 h-3 " />
                       </Button>
                     </div>
                   </div>

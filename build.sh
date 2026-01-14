@@ -50,6 +50,7 @@ docker build \
     --build-arg NEXT_PUBLIC_SUPABASE_URL="$NEXT_PUBLIC_SUPABASE_URL" \
     --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY="$NEXT_PUBLIC_SUPABASE_ANON_KEY" \
     --build-arg NEXT_PUBLIC_SERVER_API="$NEXT_PUBLIC_SERVER_API" \
+    --build-arg NEXT_PUBLIC_ENCRYPT_KEY="$NEXT_PUBLIC_ENCRYPT_KEY" \
     -t rumsan/ai-admin-kb:latest \
     .
 

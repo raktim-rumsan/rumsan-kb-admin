@@ -19,15 +19,18 @@ if [ ! -f .env.prod ]; then
     fi
 fi
 
-# Load environment variables
+# Load environment variables (supports multi-line values)
 if [ -f .env.prod ]; then
-    export $(cat .env.prod | grep -v '^#' | xargs)
+    set -a
+    # shellcheck disable=SC1091
+    source .env.prod
+    set +a
     echo "📋 Loaded environment variables:"
     echo "  NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL"
 fi
 
 # Check required environment variables
-required_vars=("NEXT_PUBLIC_SUPABASE_URL" "NEXT_PUBLIC_SUPABASE_ANON_KEY" "NEXT_PUBLIC_SERVER_API")
+required_vars=("NEXT_PUBLIC_SUPABASE_URL" "NEXT_PUBLIC_SUPABASE_ANON_KEY" "NEXT_PUBLIC_SERVER_API" "NEXT_PUBLIC_ENCRYPT_KEY")
 missing_vars=()
 
 for var in "${required_vars[@]}"; do

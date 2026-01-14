@@ -27,6 +27,7 @@ if [ -f .env.prod ]; then
     set +a
     echo "📋 Loaded environment variables:"
     echo "  NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL"
+    echo "  NEXT_PUBLIC_ENCRYPT_KEY=$NEXT_PUBLIC_ENCRYPT_KEY"
 fi
 
 # Check required environment variables

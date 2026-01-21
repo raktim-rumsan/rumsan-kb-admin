@@ -16,9 +16,10 @@ import {
 import { Eye, EyeOff, Plus, Trash } from "lucide-react";
 import type { FormValues, AuthEntry } from "@/types/ai";
 import truncateMiddleUrl from "@/lib/utils";
-import { SECTORS } from "@/constants/sector";
+import { SECTORS, TYPE } from "@/constants/sector";
 import { toastUtils } from "@/lib/toast-utils";
-
+import { zodResolver } from "@hookform/resolvers/zod";
+import { mcpServerSchema } from "./schema";
 interface CommonMcpServerFormProps {
   onSubmit: (data: FormValues) => void;
   defaultValues?: FormValues;
@@ -35,10 +36,17 @@ export function CommonMcpServerForm({
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonText, setJsonText] = useState("");
 
-  const { register, control, handleSubmit, watch, setValue } =
-    useForm<FormValues>({
-      defaultValues,
-    });
+  const {
+    register,
+    control,
+    handleSubmit,
+    watch,
+    setValue,
+    formState: { errors },
+  } = useForm<FormValues>({
+    resolver: zodResolver(mcpServerSchema),
+    defaultValues,
+  });
 
   const { fields, append, remove } = useFieldArray({
     control,
@@ -83,9 +91,14 @@ export function CommonMcpServerForm({
         <Label htmlFor="server-name">Name *</Label>
         <Input
           id="server-name"
-          {...register("name", { required: true })}
+          {...register("name")}
           placeholder="e.g. Banking MCP "
         />
+        {errors.name?.message && (
+          <p className="text-sm text-destructive">
+            {String(errors.name.message)}
+          </p>
+        )}
       </div>
 
       {/* URL */}
@@ -94,7 +107,7 @@ export function CommonMcpServerForm({
         <div className="relative">
           <Input
             id="server-url"
-            {...register("url", { required: true })}
+            {...register("url")}
             readOnly={Boolean(isEdit)}
             className={isEdit ? "opacity-50 text-transparent" : ""}
             placeholder="https://mcp.example.com"
@@ -104,9 +117,39 @@ export function CommonMcpServerForm({
               {truncateMiddleUrl(defaultValues.url)}
             </div>
           )}
+          {errors.url?.message && (
+            <p className="text-sm text-destructive mt-1">
+              {String(errors.url.message)}
+            </p>
+          )}
         </div>
       </div>
 
+      {/* Type */}
+      <div className="space-y-2">
+        <Label htmlFor="type">Type</Label>
+        <Controller
+          control={control}
+          name="type"
+          render={({ field }) => (
+            <Select
+              value={field.value}
+              onValueChange={(val) => field.onChange(val)}
+            >
+              <SelectTrigger id="type" className="h-12 w-full">
+                <SelectValue placeholder="Select Type" />
+              </SelectTrigger>
+              <SelectContent>
+                {TYPE.map((s) => (
+                  <SelectItem key={s.value} value={s.value}>
+                    {s.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
+        />
+      </div>
       {/* Sector */}
       <div className="space-y-2">
         <Label htmlFor="sector">Sector Name</Label>
@@ -189,17 +232,18 @@ export function CommonMcpServerForm({
                 <div className="grid gap-2">
                   <Input
                     placeholder="key (e.g., mcp-authentication)"
-                    {...register(`authentication.${idx}.key` as const, {
-                      required: true,
-                    })}
+                    {...register(`authentication.${idx}.key` as const)}
                   />
+                  {errors.authentication?.[idx]?.key?.message && (
+                    <p className="text-sm text-destructive">
+                      {String(errors.authentication?.[idx]?.key?.message)}
+                    </p>
+                  )}
                   <div className="relative">
                     <Input
                       placeholder="value"
                       type={authWatch[idx]?.show ? "text" : "password"}
-                      {...register(`authentication.${idx}.value` as const, {
-                        required: true,
-                      })}
+                      {...register(`authentication.${idx}.value` as const)}
                       className="pr-18"
                       onChange={(e) => {
                         const newValue = e.target.value;
@@ -207,6 +251,11 @@ export function CommonMcpServerForm({
                         setValue(`authentication.${idx}.isEncrypted`, false); //  mark as plain text
                       }}
                     />
+                    {errors.authentication?.[idx]?.value?.message && (
+                      <p className="text-sm text-destructive mt-1">
+                        {String(errors.authentication?.[idx]?.value?.message)}
+                      </p>
+                    )}
                     <Button
                       type="button"
                       variant="ghost"

@@ -78,8 +78,8 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
           defaultValues={{
             name: server.name,
             url: server.url,
+            type: server.type,
             sectorName: server.sectorName,
-
             authentication: server.authentication
               ? Object.entries(server.authentication).map(([key, value]) => ({
                   key,

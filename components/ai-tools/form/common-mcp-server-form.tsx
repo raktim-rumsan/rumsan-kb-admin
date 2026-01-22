@@ -103,6 +103,7 @@ export function CommonMcpServerForm({
           id="server-name"
           {...register("name")}
           placeholder="e.g. Banking MCP "
+          disabled={isPending}
         />
         {errors.name?.message && (
           <p className="text-sm text-destructive">
@@ -119,6 +120,7 @@ export function CommonMcpServerForm({
             id="server-url"
             {...register("url")}
             readOnly={Boolean(isEdit)}
+            disabled={isPending}
             className={isEdit ? "opacity-50 text-transparent" : ""}
             placeholder="https://mcp.example.com"
           />
@@ -145,6 +147,7 @@ export function CommonMcpServerForm({
             <Select
               value={field.value}
               onValueChange={(val) => field.onChange(val)}
+              disabled={isPending}
             >
               <SelectTrigger id="type" className="h-12 w-full">
                 <SelectValue placeholder="Select Type" />
@@ -173,6 +176,7 @@ export function CommonMcpServerForm({
             <Select
               value={field.value}
               onValueChange={(val) => field.onChange(val)}
+              disabled={isPending}
             >
               <SelectTrigger id="sector" className="h-12 w-full">
                 <SelectValue placeholder="Select Sector" />
@@ -205,6 +209,8 @@ export function CommonMcpServerForm({
                 variant="outline"
                 size="sm"
                 onClick={enterJsonMode}
+                disabled={isPending}
+                className="cursor-pointer"
               >
                 JSON
               </Button>
@@ -214,6 +220,8 @@ export function CommonMcpServerForm({
                 variant="outline"
                 size="sm"
                 onClick={exitJsonMode}
+                disabled={isPending}
+                className="cursor-pointer"
               >
                 Switch to Form
               </Button>
@@ -231,6 +239,8 @@ export function CommonMcpServerForm({
                     isEncrypted: false,
                   })
                 }
+                disabled={isPending}
+                className="cursor-pointer"
               >
                 <Plus className="w-4 h-4 mr-2" /> Add
               </Button>
@@ -246,6 +256,7 @@ export function CommonMcpServerForm({
                   <Input
                     placeholder="key (e.g., mcp-authentication)"
                     {...register(`authentication.${idx}.key` as const)}
+                    disabled={isPending}
                   />
                   {errors.authentication?.[idx]?.key?.message && (
                     <p className="text-sm text-destructive">
@@ -258,6 +269,7 @@ export function CommonMcpServerForm({
                       type={authWatch[idx]?.show ? "text" : "password"}
                       {...register(`authentication.${idx}.value` as const)}
                       className="pr-18"
+                      disabled={isPending}
                       onChange={(e) => {
                         const newValue = e.target.value;
                         setValue(`authentication.${idx}.value`, newValue);
@@ -273,13 +285,14 @@ export function CommonMcpServerForm({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-10 top-2 h-8 w-8 p-0"
+                      className="absolute right-10 top-1/2 -translate-y-1/2 h-8 w-8 p-0 cursor-pointer"
                       onClick={() =>
                         setValue(
                           `authentication.${idx}.show`,
                           !authWatch[idx]?.show,
                         )
                       }
+                      disabled={isPending}
                     >
                       {authWatch[idx]?.show ? (
                         <EyeOff className="w-4 h-4" />
@@ -291,8 +304,9 @@ export function CommonMcpServerForm({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="absolute right-2 top-2 h-8 w-8 p-0 text-destructive"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-destructive cursor-pointer"
                       onClick={() => remove(idx)}
+                      disabled={isPending}
                     >
                       <Trash className="w-4 h-4" />
                     </Button>
@@ -307,6 +321,7 @@ export function CommonMcpServerForm({
                 value={jsonText}
                 onChange={(e) => setJsonText(e.target.value)}
                 placeholder={`{\n  "mcp-authentication": "secret"\n}`}
+                disabled={isPending}
               />
               <p className="text-xs text-muted-foreground mt-2">
                 Enter headers as a JSON object with string key-value pairs.
@@ -322,10 +337,11 @@ export function CommonMcpServerForm({
           type="button"
           onClick={onCancel}
           disabled={isPending}
+          className="cursor-pointer"
         >
           Cancel
         </Button>
-        <Button type="submit" disabled={isPending}>
+        <Button type="submit" disabled={isPending} className="cursor-pointer">
           {isEdit
             ? isPending
               ? "Saving..."

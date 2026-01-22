@@ -39,12 +39,12 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
         try {
           authentication[key] = await encryptWithPublicKey(
             publicKeyPem!,
-            value
+            value,
           );
         } catch (error) {
           // Only show encryption errors
           toastUtils.generic.error(
-            `Failed to encrypt "${key}". Please check the value.`
+            `Failed to encrypt "${key}". Please check the value.`,
           );
           return;
         }
@@ -59,7 +59,7 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
       },
       {
         onSuccess: () => onClose(),
-      }
+      },
     );
   };
 
@@ -75,6 +75,7 @@ export function McpServerEdit({ server, isOpen, onClose }: EditProps) {
           onSubmit={onSubmit}
           isEdit
           onCancel={onClose}
+          isPending={updateMutation.isPending}
           defaultValues={{
             name: server.name,
             url: server.url,

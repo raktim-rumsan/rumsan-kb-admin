@@ -38,6 +38,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Skeleton } from "@/components/ui/skeleton";
 import truncateMiddleUrl from "@/lib/utils";
 
 export default function AiToolsManagementTab() {
@@ -86,7 +87,7 @@ export default function AiToolsManagementTab() {
   const handleToggleTool = (
     serverId: string,
     toolId: string,
-    newValue: boolean
+    newValue: boolean,
   ) => {
     toggleToolMutation.mutate({
       serverId,
@@ -154,7 +155,7 @@ export default function AiToolsManagementTab() {
                     aria-label="expand"
                     onClick={() =>
                       setExpandedServerId(
-                        expandedServerId === server.id ? null : server.id
+                        expandedServerId === server.id ? null : server.id,
                       )
                     }
                     className="cursor-pointer transform transition-transform"
@@ -257,11 +258,25 @@ export default function AiToolsManagementTab() {
               {expandedServerId === server.id && (
                 <div className="border-t p-4 bg-transparent">
                   <div className="text-xs text-muted-foreground font-medium mb-3">
-                    AVAILABLE TOOLS ({server.mcpTools?.length ?? 0})
+                    {syncingServerId === server.id
+                      ? "AVAILABLE TOOLS ..."
+                      : `AVAILABLE TOOLS (${server.mcpTools?.length ?? 0})`}
                   </div>
 
                   <div className="space-y-3">
-                    {(server.mcpTools ?? []).length === 0 ? (
+                    {syncingServerId === server.id ? (
+                      [1, 2, 3].map((i) => (
+                        <div
+                          key={`skeleton-${i}`}
+                          className="flex items-center justify-between p-4 rounded-lg border"
+                        >
+                          <div className="space-y-2 w-3/4">
+                            <Skeleton className="h-4 w-40" />
+                            <Skeleton className="h-3 w-32" />
+                          </div>
+                        </div>
+                      ))
+                    ) : (server.mcpTools ?? []).length === 0 ? (
                       <div className="text-sm text-muted-foreground">
                         No tools available for this server.
                       </div>

@@ -171,7 +171,7 @@ export default function DocumentsPage() {
           <h1 className="text-2xl font-semibold">My Resources</h1>
         </div>
         <Button
-          className="bg-black hover:bg-gray-800"
+          className="bg-black hover:bg-gray-800 cursor-pointer"
           onClick={() => setIsUploadModalOpen(true)}
         >
           <Upload className="w-4 h-4 mr-2" />
@@ -219,7 +219,7 @@ export default function DocumentsPage() {
                                 });
                                 setOpenDeleteModal(true);
                               }}
-                              className="text-red-600 hover:text-red-700"
+                              className="text-red-600 hover:text-red-700 cursor-pointer"
                               disabled={deleteMutation.isPending}
                             >
                               <Trash2 className="w-4 h-4" />

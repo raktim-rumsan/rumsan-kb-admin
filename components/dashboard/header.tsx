@@ -37,7 +37,7 @@ export function Header({ onMenuClick }: HeaderProps) {
           </div>
 
           {/* Hamburger menu - visible on mobile */}
-          <Button variant="ghost" size="sm" className="lg:hidden" onClick={onMenuClick}>
+          <Button variant="ghost" size="sm" className="lg:hidden cursor-pointer" onClick={onMenuClick}>
             <Menu className="h-5 w-5" />
           </Button>          
         </div>
@@ -48,7 +48,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             <User className="h-4 w-4 text-gray-600" />
             <span className="text-sm text-gray-700 hidden sm:inline">Admin</span>
           </div> */}
-          <Button variant="outline" size="sm" onClick={handleLogout}>
+          <Button variant="outline" size="sm" onClick={handleLogout} className="cursor-pointer">
             <LogOut className="h-4 w-4 mr-2" />
             Logout
           </Button>

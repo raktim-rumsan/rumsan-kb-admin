@@ -48,14 +48,14 @@ function PromptEditor({
         <Button
           variant="outline"
           size="sm"
-          className="text-muted-foreground hover:text-foreground w-3xs"
+          className="text-muted-foreground hover:text-foreground w-3xs cursor-pointer"
           onClick={onReset}
         >
           <RotateCcw className="w-4 h-4" />
           Reset
         </Button>
         <Button
-          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-2  ml-4 w-3xs"
+          className="bg-primary hover:bg-primary/90 text-primary-foreground px-8 py-2  ml-4 w-3xs cursor-pointer"
           onClick={onSave}
           disabled={isSaveDisabled || isPending}
         >
@@ -170,7 +170,7 @@ A: I can help you with that. Please click on the "Forgot Password" link on the l
                   key={tab}
                   onClick={() => setActiveTab(tab)}
                   className={cn(
-                    "px-6 py-3 text-sm font-medium rounded-md transition-colors ",
+                    "px-6 py-3 text-sm font-medium rounded-md transition-colors cursor-pointer",
                     activeTab === tab
                       ? "bg-background text-foreground border border-border shadow-sm"
                       : "text-muted-foreground hover:text-foreground"

@@ -56,6 +56,14 @@ export function CommonMcpServerForm({
   });
 
   const authWatch = watch("authentication");
+  const typeWatch = watch("type");
+
+  const typeDescription =
+    typeWatch === "INTERNAL"
+      ? "No workspace-specific authorization required."
+      : typeWatch === "EXTERNAL"
+        ? "Requires workspace-specific API keys or authorization."
+        : "";
 
   const enterJsonMode = () => {
     const obj: Record<string, string> = {};
@@ -151,6 +159,9 @@ export function CommonMcpServerForm({
             </Select>
           )}
         />
+        {typeDescription ? (
+          <p className="text-sm text-muted-foreground">{typeDescription}</p>
+        ) : null}
       </div>
       {/* Sector */}
       <div className="grid gap-2">

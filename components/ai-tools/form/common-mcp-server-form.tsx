@@ -306,11 +306,22 @@ export function CommonMcpServerForm({
       </div>
 
       <DialogFooter>
-        <Button variant="outline" type="button" onClick={onCancel} disabled={isPending}>
+        <Button
+          variant="outline"
+          type="button"
+          onClick={onCancel}
+          disabled={isPending}
+        >
           Cancel
         </Button>
         <Button type="submit" disabled={isPending}>
-          {isEdit ? (isPending ? "Saving..." : "Save Changes") : isPending ? "Creating..." : "Create Server"}
+          {isEdit
+            ? isPending
+              ? "Saving..."
+              : "Save Changes"
+            : isPending
+              ? "Creating..."
+              : "Create Server"}
         </Button>
       </DialogFooter>
     </form>

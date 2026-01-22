@@ -121,7 +121,7 @@ export function SimpleFileUploadModal({
           <Button
             onClick={handleUpload}
             disabled={isUploading || !selectedFile}
-            className="w-full bg-gray-600 hover:bg-gray-700"
+            className="w-full bg-gray-600 hover:bg-gray-700 cursor-pointer"
           >
             {isUploading ? "Uploading..." : "Upload"}
           </Button>

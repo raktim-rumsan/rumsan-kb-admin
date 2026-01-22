@@ -129,7 +129,7 @@ export default function AiToolsManagementTab() {
           </h3>
         </div>
         <McpServerAdd>
-          <Button className="bg-black hover:bg-gray-800">
+          <Button className="bg-black hover:bg-gray-800 cursor-pointer">
             <Plus className="w-4 h-4 mr-2" />
             Add MCP Server
           </Button>

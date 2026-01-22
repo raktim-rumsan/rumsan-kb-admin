@@ -1,14 +1,46 @@
 export async function encryptWithPublicKey(
-  publicKeyPem: string,
+  publicKeyValue: string,
   message: string
 ) {
-  // Helper: Convert PEM to ArrayBuffer
-  function pemToArrayBuffer(pem: string) {
-    const b64 = pem
-      .replace(/-----BEGIN PUBLIC KEY-----/, "")
-      .replace(/-----END PUBLIC KEY-----/, "")
-      .replace(/\s/g, "");
-    const binary = atob(b64);
+  // Normalize env value (handles PEM, base64-of-PEM, or bare key body)
+  function extractKeyBase64(input: string) {
+    const trimmed = (input ?? "").trim();
+
+    // Case 1: PEM with headers
+    if (trimmed.includes("BEGIN PUBLIC KEY")) {
+      return trimmed
+        .replace(/-----BEGIN PUBLIC KEY-----/g, "")
+        .replace(/-----END PUBLIC KEY-----/g, "")
+        .replace(/\s+/g, "");
+    }
+
+    // Case 2: Base64 of PEM (starts with LS0t...) or decodes to PEM
+    try {
+      const decoded = atob(trimmed);
+      if (decoded.includes("BEGIN PUBLIC KEY")) {
+        return decoded
+          .replace(/-----BEGIN PUBLIC KEY-----/g, "")
+          .replace(/-----END PUBLIC KEY-----/g, "")
+          .replace(/\s+/g, "");
+      }
+    } catch (_err) {
+      // fall through
+    }
+
+    // Case 3: Assume already the bare key body (base64 DER)
+    return trimmed;
+  }
+
+  // Helper: Convert key body base64 to ArrayBuffer
+  function pemToArrayBuffer(pemLike: string) {
+    const b64 = extractKeyBase64(pemLike)
+      .replace(/[^A-Za-z0-9+/=]/g, "")
+      .trim();
+
+    // pad base64 safely
+    const padded = b64 + "=".repeat((4 - (b64.length % 4)) % 4);
+
+    const binary = atob(padded);
     const buffer = new ArrayBuffer(binary.length);
     const view = new Uint8Array(buffer);
     for (let i = 0; i < binary.length; i++) {
@@ -20,7 +52,7 @@ export async function encryptWithPublicKey(
   // Import public key
   const key = await window.crypto.subtle.importKey(
     "spki", // SubjectPublicKeyInfo
-    pemToArrayBuffer(publicKeyPem),
+    pemToArrayBuffer(publicKeyValue),
     {
       name: "RSA-OAEP",
       hash: "SHA-256",

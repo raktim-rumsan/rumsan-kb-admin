@@ -54,6 +54,7 @@ export function McpServerAdd({ children }: { children: ReactNode }) {
           defaultValues={{
             name: "",
             url: "",
+            type: "",
             sectorName: "",
             authentication: [],
           }}

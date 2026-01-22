@@ -8,7 +8,8 @@ export type AuthEntry = {
 export type FormValues = {
   name: string;
   url: string;
-  sectorName?: string;
+  type: string;
+  sectorName: string;
   authentication: AuthEntry[];
 };
 
@@ -16,7 +17,8 @@ export interface McpServer {
   id: string;
   name: string;
   url: string;
-  sectorName?: string;
+  type: string;
+  sectorName: string;
   isActive?: boolean;
   authentication?: Record<string, string>;
   createdAt?: string;
@@ -27,6 +29,7 @@ export interface McpServer {
 export interface CreateMcpServerPayload {
   name: string;
   url: string;
+  type: string;
   sectorName?: string;
   authentication: Record<string, string>;
 }

@@ -25,6 +25,7 @@ interface CommonMcpServerFormProps {
   defaultValues?: FormValues;
   isEdit?: boolean;
   onCancel?: () => void;
+  isPending?: boolean;
 }
 
 export function CommonMcpServerForm({
@@ -32,6 +33,7 @@ export function CommonMcpServerForm({
   defaultValues,
   isEdit = false,
   onCancel,
+  isPending = false,
 }: CommonMcpServerFormProps) {
   const [isJsonMode, setIsJsonMode] = useState(false);
   const [jsonText, setJsonText] = useState("");
@@ -126,7 +128,7 @@ export function CommonMcpServerForm({
       </div>
 
       {/* Type */}
-      <div className="space-y-2">
+      <div className="grid gap-2">
         <Label htmlFor="type">Type</Label>
         <Controller
           control={control}
@@ -151,7 +153,7 @@ export function CommonMcpServerForm({
         />
       </div>
       {/* Sector */}
-      <div className="space-y-2">
+      <div className="grid gap-2">
         <Label htmlFor="sector">Sector Name</Label>
         <Controller
           control={control}
@@ -264,7 +266,7 @@ export function CommonMcpServerForm({
                       onClick={() =>
                         setValue(
                           `authentication.${idx}.show`,
-                          !authWatch[idx]?.show
+                          !authWatch[idx]?.show,
                         )
                       }
                     >
@@ -304,11 +306,11 @@ export function CommonMcpServerForm({
       </div>
 
       <DialogFooter>
-        <Button variant="outline" type="button" onClick={onCancel}>
+        <Button variant="outline" type="button" onClick={onCancel} disabled={isPending}>
           Cancel
         </Button>
-        <Button type="submit">
-          {isEdit ? "Save Changes" : "Create Server"}
+        <Button type="submit" disabled={isPending}>
+          {isEdit ? (isPending ? "Saving..." : "Save Changes") : isPending ? "Creating..." : "Create Server"}
         </Button>
       </DialogFooter>
     </form>

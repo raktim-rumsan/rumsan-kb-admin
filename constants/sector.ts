@@ -5,6 +5,6 @@ export const SECTORS = [
 ] as const;
 
 export const TYPE = [
-  { value: "INTERNAL", label: "Internal" },
-  { value: "EXTERNAL", label: "External" },
+  { value: "INTERNAL", label: "Public" },
+  { value: "EXTERNAL", label: "Private" },
 ] as const;

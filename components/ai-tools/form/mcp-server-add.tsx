@@ -59,6 +59,7 @@ export function McpServerAdd({ children }: { children: ReactNode }) {
             authentication: [],
           }}
           onCancel={() => setOpen(false)}
+          isPending={createMutation.isPending}
         />
       </DialogContent>
     </Dialog>

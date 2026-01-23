@@ -125,8 +125,8 @@ export function CommonMcpServerForm({
             placeholder="https://mcp.example.com"
           />
           {isEdit && defaultValues?.url && (
-            <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center text-xs text-muted-foreground">
-              {truncateMiddleUrl(defaultValues.url)}
+            <div className="absolute inset-y-0 left-3 right-3 flex items-center text-xs text-muted-foreground overflow-x-auto whitespace-nowrap pr-3">
+              <span className="inline-block">{defaultValues.url}</span>
             </div>
           )}
           {errors.url?.message && (

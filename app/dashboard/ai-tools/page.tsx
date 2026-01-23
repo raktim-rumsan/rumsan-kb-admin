@@ -9,6 +9,8 @@ import {
   ChevronDown,
   RefreshCcw,
   Copy,
+  Lock,
+  Unlock,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -40,6 +42,7 @@ import {
 } from "@/components/ui/tooltip";
 import { Skeleton } from "@/components/ui/skeleton";
 import truncateMiddleUrl from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 
 export default function AiToolsManagementTab() {
   const { data: servers, isError, isLoading, refetch } = useMcpServersQuery();
@@ -180,6 +183,25 @@ export default function AiToolsManagementTab() {
                             server.sectorName.slice(1)}
                         </span>
                       )}
+                      <Badge
+                        variant="outline"
+                        className={`text-xs flex items-center gap-1 ${
+                          server.type === "EXTERNAL"
+                            ? "border-amber-500 text-amber-600"
+                            : "border-emerald-500 text-emerald-600"
+                        }`}
+                      >
+                        {server?.type === "EXTERNAL" ? (
+                          <Lock className="size-3" />
+                        ) : (
+                          <Unlock className="size-3" />
+                        )}
+                        {server.type === "EXTERNAL"
+                          ? "Private"
+                          : server.type === "INTERNAL"
+                            ? "Public"
+                            : server.type}
+                      </Badge>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <span title={server.url}>
